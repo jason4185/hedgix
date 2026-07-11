@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hedgix Market Protection Registry</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fa;
+        --text: #17202a;
+        --muted: #52616f;
+        --border: #d8dee6;
+        --accent: #0f766e;
+        --accent-hover: #115e59;
+        --surface: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      main {
+        width: min(760px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 64px 0;
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 2.25rem;
+        line-height: 1.1;
+      }
+
+      p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      ul {
+        margin: 0 0 28px;
+        padding-left: 20px;
+        color: var(--muted);
+      }
+
+      li + li {
+        margin-top: 8px;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 10px 16px;
+        margin: 0 0 32px;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      dt {
+        font-weight: 700;
+      }
+
+      dd {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      a.button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: 6px;
+        color: #ffffff;
+        background: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      a.button:hover,
+      a.button:focus {
+        background: var(--accent-hover);
+      }
+
+      @media (max-width: 520px) {
+        main {
+          padding: 40px 0;
+        }
+
+        h1 {
+          font-size: 1.85rem;
+        }
+
+        dl {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+
+        dd + dt {
+          margin-top: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Hedgix Market Protection Registry</h1>
+      <p>This is the official Hedgix Market Protection Registry for the GenLayer Bradbury testnet MVP.</p>
+
+      <ul>
+        <li>The registry defines Hedgix product terms.</li>
+        <li>Binance provides market data.</li>
+        <li>The GenLayer contract uses this registry to verify supported protection products.</li>
+      </ul>
+
+      <dl>
+        <dt>Registry version:</dt>
+        <dd>v1</dd>
+        <dt>Network:</dt>
+        <dd>GenLayer Bradbury</dd>
+        <dt>App:</dt>
+        <dd>Hedgix</dd>
+        <dt>Status:</dt>
+        <dd>draft</dd>
+      </dl>
+
+      <a class="button" href="./hedgix-market-protection-registry.v1.json">View Registry JSON</a>
+    </main>
+  </body>
+</html>

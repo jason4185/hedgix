@@ -1,0 +1,157 @@
+{
+  "metadata": {
+    "registry_name": "Hedgix Market Protection Registry",
+    "registry_version": "v1",
+    "network": "GenLayer Bradbury",
+    "app_name": "Hedgix",
+    "status": "draft"
+  },
+  "supported_durations": [
+    {
+      "label": "7 days",
+      "duration_days": 7
+    },
+    {
+      "label": "14 days",
+      "duration_days": 14
+    },
+    {
+      "label": "30 days",
+      "duration_days": 30
+    }
+  ],
+  "protection_products": [
+    {
+      "protection_type": "price_drop_protection",
+      "display_name": "Price Drop Protection",
+      "supported_assets": [
+        {
+          "asset": "BTCUSDT",
+          "binance_settlement_symbol": "BTCUSDT"
+        },
+        {
+          "asset": "ETHUSDT",
+          "binance_settlement_symbol": "ETHUSDT"
+        },
+        {
+          "asset": "SOLUSDT",
+          "binance_settlement_symbol": "SOLUSDT"
+        },
+        {
+          "asset": "BNBUSDT",
+          "binance_settlement_symbol": "BNBUSDT"
+        }
+      ],
+      "event_levels": [
+        {
+          "name": "Protected Drop",
+          "trigger_rule": {
+            "metric": "price_drop_percent",
+            "operator": ">=",
+            "threshold_percent": "2"
+          },
+          "premium": {
+            "amount": 1,
+            "token": "GEN"
+          },
+          "payout": {
+            "amount": 2,
+            "token": "GEN"
+          }
+        },
+        {
+          "name": "Major Drop",
+          "trigger_rule": {
+            "metric": "price_drop_percent",
+            "operator": ">=",
+            "threshold_percent": "3"
+          },
+          "premium": {
+            "amount": 1,
+            "token": "GEN"
+          },
+          "payout": {
+            "amount": 3,
+            "token": "GEN"
+          }
+        },
+        {
+          "name": "Crash Event",
+          "trigger_rule": {
+            "metric": "price_drop_percent",
+            "operator": ">=",
+            "threshold_percent": "4"
+          },
+          "premium": {
+            "amount": 1,
+            "token": "GEN"
+          },
+          "payout": {
+            "amount": 4,
+            "token": "GEN"
+          }
+        }
+      ]
+    },
+    {
+      "protection_type": "depeg_protection",
+      "display_name": "Depeg Protection",
+      "supported_assets": [
+        {
+          "asset": "USDC",
+          "binance_settlement_symbol": "USDCUSDT"
+        }
+      ],
+      "event_levels": [
+        {
+          "name": "Soft Depeg",
+          "trigger_rule": {
+            "metric": "settlement_price_usd",
+            "operator": "<=",
+            "threshold": "0.998"
+          },
+          "premium": {
+            "amount": 1,
+            "token": "GEN"
+          },
+          "payout": {
+            "amount": 2,
+            "token": "GEN"
+          }
+        },
+        {
+          "name": "Deep Depeg",
+          "trigger_rule": {
+            "metric": "settlement_price_usd",
+            "operator": "<=",
+            "threshold": "0.996"
+          },
+          "premium": {
+            "amount": 1,
+            "token": "GEN"
+          },
+          "payout": {
+            "amount": 3,
+            "token": "GEN"
+          }
+        },
+        {
+          "name": "Severe Depeg",
+          "trigger_rule": {
+            "metric": "settlement_price_usd",
+            "operator": "<=",
+            "threshold": "0.994"
+          },
+          "premium": {
+            "amount": 1,
+            "token": "GEN"
+          },
+          "payout": {
+            "amount": 4,
+            "token": "GEN"
+          }
+        }
+      ]
+    }
+  ]
+}

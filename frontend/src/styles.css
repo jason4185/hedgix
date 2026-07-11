@@ -1,0 +1,163 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Hedgix design system — editorial fintech */
+
+@theme inline {
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 6px;
+  --radius-4xl: 8px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-amber: var(--amber);
+  --color-amber-deep: var(--amber-deep);
+  --color-stone: var(--stone);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-violet: var(--violet);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-muted-ink: var(--muted-ink);
+  --color-hairline: var(--hairline);
+
+  --font-serif: "DM Serif Display", ui-serif, Georgia, serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.125rem;
+
+  --amber: oklch(0.86 0.14 88);
+  --amber-deep: oklch(0.78 0.16 78);
+  --stone: oklch(0.94 0.015 80);
+  --paper: oklch(0.985 0.005 85);
+  --ink: oklch(0.16 0.01 60);
+  --violet: oklch(0.56 0.26 295);
+  --success: oklch(0.55 0.13 155);
+  --danger: oklch(0.62 0.2 32);
+  --muted-ink: oklch(0.44 0.01 60);
+  --hairline: oklch(0.16 0.01 60 / 14%);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--stone);
+  --secondary-foreground: var(--ink);
+  --muted: var(--stone);
+  --muted-foreground: var(--muted-ink);
+  --accent: var(--violet);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(1 0 0);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: var(--ink);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "ss01", "cv11";
+  }
+  .font-serif {
+    font-family: var(--font-serif);
+    font-feature-settings: "ss01";
+  }
+  .font-sans {
+    font-family: var(--font-sans);
+  }
+}
+
+@utility hedgix-rule {
+  border-top: 1px solid var(--hairline);
+}
+
+@keyframes hedgix-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes hedgix-drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+@keyframes hedgix-draw {
+  from {
+    stroke-dashoffset: 400;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@utility anim-fade-up {
+  animation: hedgix-fade-up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@utility anim-drift {
+  animation: hedgix-drift 8s ease-in-out infinite;
+}
+@utility anim-draw {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: hedgix-draw 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) 0.4s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

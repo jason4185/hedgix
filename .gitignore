@@ -1,0 +1,35 @@
+.DS_Store
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.vite/
+.output/
+.nitro/
+.wrangler/
+coverage/
+*.tsbuildinfo
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+tmp/
+temp/
+
+# Editor and local machine files
+.idea/
+.vscode/
+*.swp
+*.swo
