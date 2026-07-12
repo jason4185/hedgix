@@ -99,6 +99,14 @@
     color: var(--color-foreground);
     font-feature-settings: "ss01", "cv11";
   }
+  :is(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
   .font-serif {
     font-family: var(--font-serif);
     font-feature-settings: "ss01";

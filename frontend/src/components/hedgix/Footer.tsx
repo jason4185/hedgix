@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { BRADBURY_EXPLORER_URL } from "@/config/chains";
+import { runtimeEnv } from "@/config/env";
 import { LogoMark, Wordmark } from "./Logo";
 
-type Item = { label: string; to?: string; href?: string; disabled?: boolean };
+type Item = { label: string; to?: string; href?: string };
 
 const cols: { h: string; links: Item[] }[] = [
   {
@@ -25,9 +27,14 @@ const cols: { h: string; links: Item[] }[] = [
     h: "Resources",
     links: [
       { label: "Documentation", to: "/docs" },
-      { label: "GenLayer", href: "#", disabled: true },
-      { label: "GitHub", href: "#", disabled: true },
-      { label: "Contract Explorer", href: "#", disabled: true },
+      { label: "GenLayer", href: "https://www.genlayer.com/" },
+      { label: "GitHub", href: "https://github.com/jason4185/hedgix" },
+      {
+        label: "Contract Explorer",
+        href: runtimeEnv.contractAddress
+          ? `${BRADBURY_EXPLORER_URL}/address/${runtimeEnv.contractAddress}`
+          : BRADBURY_EXPLORER_URL,
+      },
     ],
   },
 ];
@@ -40,18 +47,8 @@ function FooterLink({ item }: { item: Item }) {
         {item.label}
       </Link>
     );
-  if (item.disabled)
-    return (
-      <span
-        className="cursor-not-allowed text-sm text-paper/40"
-        aria-disabled="true"
-        title="Coming soon"
-      >
-        {item.label}
-      </span>
-    );
   return (
-    <a href={item.href} className={base}>
+    <a href={item.href} className={base} target="_blank" rel="noreferrer">
       {item.label}
     </a>
   );
@@ -91,7 +88,7 @@ export function Footer() {
         </div>
         <div className="mt-16 flex flex-col items-start justify-between gap-4 border-t border-paper/15 pt-6 text-xs text-paper/50 md:flex-row md:items-center">
           <span>© {new Date().getFullYear()} Hedgix Protocol · v1</span>
-          <span>Example data shown for illustration. Not investment advice.</span>
+          <span>Product terms and contract state should be reviewed before every action.</span>
         </div>
       </div>
     </footer>

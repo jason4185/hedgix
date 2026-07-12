@@ -1,0 +1,28 @@
+export const HEDGIX_METHODS = {
+  purchaseProtection: "purchase_protection",
+  settleProtectionDay: "settle_protection_day",
+  claimPayout: "claim_payout",
+  cancelProtection: "cancel_protection",
+  addPoolFunds: "add_pool_funds",
+  withdrawFromPoolGen: "withdraw_from_pool_gen",
+  setSettlementOperator: "set_settlement_operator",
+  pauseContract: "pause_contract",
+  unpauseContract: "unpause_contract",
+  getMyDashboardSummary: "get_my_dashboard_summary",
+  getMyDashboardSummaryPaginated: "get_my_dashboard_summary_paginated",
+  getDashboardSummary: "get_dashboard_summary",
+  getPoolStatus: "get_pool_status",
+  getProtection: "get_protection",
+  getMyProtectionIds: "get_my_protection_ids",
+  getActiveProtectionIds: "get_active_protection_ids",
+  getActiveProtectionIdsPaginated: "get_active_protection_ids_paginated",
+  getExpectedSettlementDate: "get_expected_settlement_date",
+  getSettlementReadiness: "get_settlement_readiness",
+  getOwner: "get_owner",
+  getSettlementOperator: "get_settlement_operator",
+  getRegistryUrl: "get_registry_url",
+  getRegistryVersion: "get_registry_version",
+  isPaused: "is_paused",
+} as const;
+
+export const HEDGIX_REQUIRED_SCHEMA_METHODS = Object.values(HEDGIX_METHODS);

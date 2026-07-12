@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { DEFAULT_REGISTRY_URL } from "./config/env";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -44,9 +45,66 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+async function proxyRegistry(): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const upstreamUrl = import.meta.env.VITE_HEDGIX_REGISTRY_URL?.trim() || DEFAULT_REGISTRY_URL;
+
+  try {
+    const response = await fetch(upstreamUrl, {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    const body = await response.text();
+    const headers = new Headers({
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store, max-age=0",
+      "x-hedgix-registry-url": upstreamUrl,
+    });
+
+    if (!response.ok) {
+      console.error(`Hedgix registry fetch failed: ${response.status} ${upstreamUrl}`);
+      return new Response(
+        JSON.stringify({
+          error: "REGISTRY_FETCH_FAILED",
+          status: response.status,
+          registry_url: upstreamUrl,
+        }),
+        { status: 502, headers },
+      );
+    }
+
+    return new Response(body, { status: 200, headers });
+  } catch (error) {
+    const aborted = error instanceof Error && error.name === "AbortError";
+    console.error("Hedgix registry proxy error", error);
+    return new Response(
+      JSON.stringify({
+        error: aborted ? "REGISTRY_FETCH_TIMEOUT" : "REGISTRY_FETCH_FAILED",
+        registry_url: upstreamUrl,
+      }),
+      {
+        status: aborted ? 504 : 502,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "no-store, max-age=0",
+          "x-hedgix-registry-url": upstreamUrl,
+        },
+      },
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/registry") {
+        return await proxyRegistry();
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

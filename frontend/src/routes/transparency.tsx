@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout, PageHeader } from "@/components/hedgix/AppLayout";
+import { BRADBURY_EXPLORER_URL } from "@/config/chains";
+import { runtimeEnv } from "@/config/env";
+import { REGISTRY_URL } from "@/lib/hedgix-data";
 
 export const Route = createFileRoute("/transparency")({
   head: () => ({
@@ -23,19 +26,23 @@ export const Route = createFileRoute("/transparency")({
 const sections = [
   {
     t: "Trust model",
-    b: "The frontend is a display and interaction layer. Product terms come from the official Hedgix registry, not this interface.",
+    b: "The frontend is a display and interaction layer. RainbowKit connects an injected browser wallet; WalletConnect and QR pairing are intentionally not included.",
+  },
+  {
+    t: "GenLayerJS transactions",
+    b: "GenLayerJS submits Intelligent Contract reads and writes, then monitors GenLayer transaction status. A transaction hash alone is not treated as success.",
   },
   {
     t: "Registry verification",
-    b: "The contract fetches the registry and verifies the protected asset, protection type, event level, duration, premium, payout, Binance symbol, and trigger rule for every purchase.",
+    b: "The contract fetches the registry and verifies metadata, version, protected asset, protection type, event level, duration, premium, payout, Binance symbol, and trigger rule for every purchase.",
   },
   {
     t: "Market data verification",
-    b: "Binance data is fetched during purchase and settlement. GenLayer validators verify the nondeterministic fetch and store the deterministic result.",
+    b: "Binance is the only market-data provider. The contract verifies ticker symbols during purchase and candle open time, close time, selected price field, and validator agreement during settlement.",
   },
   {
     t: "Settlement verification",
-    b: "Each closed daily candle is compared against the stored trigger. Policy transitions between ACTIVE, TRIGGERED, PAID, EXPIRED, and CANCELLED are stored on-chain.",
+    b: "Each closed 1-day candle low is compared against the stored trigger. Policy transitions between ACTIVE, TRIGGERED, PAID, EXPIRED, and CANCELLED are stored on-chain.",
   },
   {
     t: "Pool accounting",
@@ -47,21 +54,37 @@ const sections = [
   },
   {
     t: "MVP limitations",
-    b: "This MVP still has trust assumptions: a single market data source, a small set of validators, and manually curated registry updates.",
+    b: "This MVP still has trust assumptions: the versioned registry is hosted externally, Binance is centralized market data, the underwriting pool must remain funded, and settlement requires a transaction.",
   },
   {
-    t: "Future improvements",
-    b: "Multiple redundant data sources, expanded validator sets, and permissionless registry proposals are on the roadmap.",
+    t: "Policy evidence",
+    b: "Hedgix shows only verified records. Transaction hashes are omitted unless a specific purchase, settlement, trigger, or claim record has been confirmed.",
   },
 ];
 
-const placeholders = [
-  { k: "Contract address", v: "0x…coming soon" },
-  { k: "Registry URL", v: "hedgix://registry/v1 (coming soon)" },
-  { k: "Source code", v: "GitHub — coming soon" },
-  { k: "Explorer evidence", v: "GenLayer Explorer — coming soon" },
-  { k: "Transaction proof", v: "Per-policy proofs — coming soon" },
-  { k: "Audit information", v: "External audit — coming soon" },
+const verifiedResources = [
+  {
+    k: "Deployed Hedgix contract",
+    v: runtimeEnv.contractAddress ?? "Contract address unavailable",
+    href: runtimeEnv.contractAddress
+      ? `${BRADBURY_EXPLORER_URL}/address/${runtimeEnv.contractAddress}`
+      : BRADBURY_EXPLORER_URL,
+  },
+  {
+    k: "Official product registry",
+    v: "Hedgix registry v1",
+    href: REGISTRY_URL,
+  },
+  {
+    k: "GitHub source code",
+    v: "jason4185/hedgix",
+    href: "https://github.com/jason4185/hedgix",
+  },
+  {
+    k: "GenLayer Bradbury network",
+    v: "Bradbury explorer",
+    href: BRADBURY_EXPLORER_URL,
+  },
 ];
 
 function TransparencyPage() {
@@ -93,16 +116,25 @@ function TransparencyPage() {
       <section className="border-b border-hairline bg-stone">
         <div className="mx-auto max-w-[1400px] px-6 py-20 md:px-10 md:py-28">
           <div className="mb-8 flex items-baseline justify-between">
-            <h2 className="font-serif text-3xl text-ink md:text-4xl">On-chain references</h2>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-muted-ink">
-              Placeholders — no invented values
-            </span>
+            <h2 className="font-serif text-3xl text-ink md:text-4xl">Verified resources</h2>
           </div>
+          <p className="mb-8 max-w-2xl text-sm leading-relaxed text-muted-ink">
+            Review the deployed contract, official product registry, and source code used by Hedgix.
+            Transaction hashes are shown only after specific records are verified.
+          </p>
           <dl className="grid grid-cols-1 gap-px bg-hairline md:grid-cols-2 lg:grid-cols-3">
-            {placeholders.map((p) => (
+            {verifiedResources.map((p) => (
               <div key={p.k} className="bg-paper p-6">
                 <dt className="text-[10px] uppercase tracking-[0.22em] text-muted-ink">{p.k}</dt>
-                <dd className="mt-3 font-mono text-sm text-ink">{p.v}</dd>
+                <dd className="mt-3 break-words font-mono text-sm text-ink">{p.v}</dd>
+                <a
+                  href={p.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex text-sm text-violet underline"
+                >
+                  Open resource
+                </a>
               </div>
             ))}
           </dl>

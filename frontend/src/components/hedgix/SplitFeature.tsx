@@ -72,7 +72,7 @@ function ProtectionVisual() {
       <circle cx="320" cy="300" r="4" fill="currentColor" />
       <circle cx="320" cy="320" r="6" fill="var(--violet)" />
       <text x="330" y="304" className="fill-current text-[10px]" opacity="0.7">
-        Reference 63,772.06
+        Locked reference
       </text>
       <text
         x="330"
@@ -106,8 +106,8 @@ export function SplitFeature() {
             Protection without <span className="italic">hidden</span> trigger rules.
           </h3>
           <p className="mt-6 max-w-md text-base leading-relaxed text-muted-ink md:text-lg">
-            Every policy records its verified reference price, trigger price, coverage period,
-            premium, payout amount, settlement progress, and final status.
+            Every policy records its verified Locked reference price, trigger price, coverage
+            period, premium, payout amount, settlement progress, and final status.
           </p>
           <a
             href="#transparency"

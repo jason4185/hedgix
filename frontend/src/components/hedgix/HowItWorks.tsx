@@ -14,12 +14,12 @@ const steps = [
   {
     n: "03",
     t: "Set reference and trigger",
-    b: "Binance market data establishes the policy reference price and trigger condition.",
+    b: "The contract fetches the Binance live ticker during purchase, stores the Locked reference price, and records the trigger.",
   },
   {
     n: "04",
     t: "Settle and claim",
-    b: "Closed daily candles determine whether the policy triggers and whether a payout can be claimed.",
+    b: "Closed Binance daily candles determine whether the policy triggers. The policyholder claims the reserved payout after confirmation.",
   },
 ];
 

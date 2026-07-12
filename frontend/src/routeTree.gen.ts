@@ -19,6 +19,7 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PolicyIdRouteImport } from './routes/policy.$id'
 
 const TransparencyRoute = TransparencyRouteImport.update({
   id: '/transparency',
@@ -70,6 +71,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PolicyIdRoute = PolicyIdRouteImport.update({
+  id: '/policy/$id',
+  path: '/policy/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/protect': typeof ProtectRoute
   '/registry': typeof RegistryRoute
   '/transparency': typeof TransparencyRoute
+  '/policy/$id': typeof PolicyIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/protect': typeof ProtectRoute
   '/registry': typeof RegistryRoute
   '/transparency': typeof TransparencyRoute
+  '/policy/$id': typeof PolicyIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/protect': typeof ProtectRoute
   '/registry': typeof RegistryRoute
   '/transparency': typeof TransparencyRoute
+  '/policy/$id': typeof PolicyIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/protect'
     | '/registry'
     | '/transparency'
+    | '/policy/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/protect'
     | '/registry'
     | '/transparency'
+    | '/policy/$id'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/protect'
     | '/registry'
     | '/transparency'
+    | '/policy/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   ProtectRoute: typeof ProtectRoute
   RegistryRoute: typeof RegistryRoute
   TransparencyRoute: typeof TransparencyRoute
+  PolicyIdRoute: typeof PolicyIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/policy/$id': {
+      id: '/policy/$id'
+      path: '/policy/$id'
+      fullPath: '/policy/$id'
+      preLoaderRoute: typeof PolicyIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProtectRoute: ProtectRoute,
   RegistryRoute: RegistryRoute,
   TransparencyRoute: TransparencyRoute,
+  PolicyIdRoute: PolicyIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

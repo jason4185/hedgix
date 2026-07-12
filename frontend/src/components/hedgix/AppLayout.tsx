@@ -4,7 +4,7 @@ import { Footer } from "./Footer";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-paper text-ink">
+    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
       <Header />
       <main>{children}</main>
       <Footer />
@@ -23,15 +23,17 @@ export function PageHeader({
 }) {
   return (
     <section className="border-b border-hairline bg-amber">
-      <div className="mx-auto max-w-[1400px] px-6 py-20 md:px-10 md:py-28">
+      <div className="mx-auto min-w-0 max-w-[1400px] px-6 py-20 md:px-10 md:py-28">
         {eyebrow && (
           <div className="mb-6 text-xs uppercase tracking-[0.22em] text-ink/70">{eyebrow}</div>
         )}
-        <h1 className="max-w-4xl font-serif text-4xl leading-[1.02] tracking-tight text-ink md:text-6xl">
+        <h1 className="max-w-full whitespace-normal break-words font-serif text-3xl leading-[1.04] tracking-tight text-ink [overflow-wrap:anywhere] sm:max-w-4xl sm:text-4xl md:text-6xl">
           {title}
         </h1>
         {lede && (
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-ink/80 md:text-lg">{lede}</p>
+          <p className="mt-6 max-w-full whitespace-normal break-words text-base leading-relaxed text-ink/80 [overflow-wrap:anywhere] sm:max-w-2xl md:text-lg">
+            {lede}
+          </p>
         )}
       </div>
     </section>

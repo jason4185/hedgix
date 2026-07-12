@@ -47,8 +47,9 @@ export function Hero() {
               className="anim-fade-up max-w-md text-base leading-relaxed text-ink/80 md:text-lg"
               style={{ animationDelay: "0.55s" }}
             >
-              Hedgix protects eligible crypto positions against defined market drops and stablecoin
-              depeg events using verified market data and transparent on-chain settlement.
+              Protect selected crypto assets against defined price drops and stablecoin depegs.
+              Hedgix verifies market conditions through Binance data and settles every protection
+              transparently on-chain.
             </p>
             <div
               className="anim-fade-up mt-8 flex flex-wrap items-center gap-3"
@@ -56,6 +57,7 @@ export function Hero() {
             >
               <Link
                 to="/protect"
+                search={{ type: undefined, asset: undefined }}
                 className="group inline-flex items-center gap-3 bg-ink px-6 py-3.5 text-sm font-medium text-paper transition-colors hover:bg-ink/90"
               >
                 Get Protection

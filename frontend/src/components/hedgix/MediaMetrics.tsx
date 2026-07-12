@@ -61,7 +61,7 @@ export function MediaMetrics() {
               strokeWidth="1.5"
             />
             <text x="14" y="414" className="fill-[#e05a2b] text-[11px] uppercase tracking-widest">
-              Trigger 62,496.62
+              Stored trigger
             </text>
             {/* reference */}
             <line
@@ -74,7 +74,7 @@ export function MediaMetrics() {
               strokeDasharray="2 6"
             />
             <text x="14" y="224" className="fill-white/60 text-[11px] uppercase tracking-widest">
-              Reference 63,772.06
+              Locked reference
             </text>
             {/* market line */}
             <path

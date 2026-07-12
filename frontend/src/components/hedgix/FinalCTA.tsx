@@ -20,6 +20,7 @@ export function FinalCTA() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/protect"
+                search={{ type: undefined, asset: undefined }}
                 className="inline-flex items-center gap-2 bg-ink px-6 py-3.5 text-sm font-medium text-paper hover:bg-ink/90"
               >
                 Get Protection <Sym.Arrow className="h-4 w-4" />

@@ -1,7 +1,29 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppLayout, PageHeader } from "@/components/hedgix/AppLayout";
-import { mockPolicies, type Policy, type PolicyStatus } from "@/lib/hedgix-data";
+import { ContractErrorMessage, EmptyState, LoadingState } from "@/components/hedgix/Feedback";
+import { TransactionDialog } from "@/components/hedgix/TransactionDialog";
+import { runtimeEnv } from "@/config/env";
+import { useHedgixWrite } from "@/hooks/useHedgixWrite";
+import { usePolicy } from "@/hooks/useHedgixReads";
+import { useMyDashboard } from "@/hooks/useMyDashboard";
+import {
+  canCancel,
+  canClaim,
+  formatUsdPrice,
+  formatUtcDate,
+  policyDisplayName,
+  settlementReadinessText,
+  shortAddress,
+  statusBadgeClass,
+  triggerConditionLine,
+  weiToGen,
+  type ContractPolicy,
+  type ProtectionStatus,
+} from "@/lib/hedgix-data";
+import { mapHedgixError } from "@/lib/genlayer/errors";
+import type { DashboardProtectionRow } from "@/lib/genlayer/types";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -13,24 +35,10 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-const STATUSES: PolicyStatus[] = ["ACTIVE", "TRIGGERED", "PAID", "EXPIRED", "CANCELLED"];
-
 function DashboardPage() {
-  const [connected, setConnected] = useState(true);
-  const [filter, setFilter] = useState<PolicyStatus | "ALL">("ALL");
-  const [selected, setSelected] = useState<Policy | null>(null);
-
-  const policies = connected ? mockPolicies : [];
-  const filtered = filter === "ALL" ? policies : policies.filter((p) => p.status === filter);
-
-  const summary = {
-    total: policies.length,
-    ACTIVE: policies.filter((p) => p.status === "ACTIVE").length,
-    TRIGGERED: policies.filter((p) => p.status === "TRIGGERED").length,
-    PAID: policies.filter((p) => p.status === "PAID").length,
-    EXPIRED: policies.filter((p) => p.status === "EXPIRED").length,
-    CANCELLED: policies.filter((p) => p.status === "CANCELLED").length,
-  };
+  const writer = useHedgixWrite();
+  const dashboard = useMyDashboard(writer.wallet.address);
+  const summary = dashboard.data;
 
   return (
     <AppLayout>
@@ -41,78 +49,291 @@ function DashboardPage() {
             Your <span className="italic">protections</span>, one wallet at a glance.
           </>
         }
-        lede="Wallet-scoped view. This dashboard currently uses mock data and will be wired to get_my_dashboard_summary()."
+        lede="View and manage the protections associated with your connected wallet."
       />
 
       <section className="border-b border-hairline bg-paper">
         <div className="mx-auto max-w-[1400px] px-6 py-10 md:px-10">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-muted-ink">
-              <span className={`h-2 w-2 ${connected ? "bg-success" : "bg-danger"}`} />
-              {connected ? "Wallet 0x7a…3f connected" : "Wallet not connected"}
+              <span
+                className={`h-2 w-2 ${writer.wallet.isConnected ? "bg-success" : "bg-danger"}`}
+              />
+              {writer.wallet.isConnected
+                ? `Connected wallet ${shortAddress(writer.wallet.address)}`
+                : "Wallet not connected"}
             </div>
-            <button
-              onClick={() => setConnected((v) => !v)}
+            <Link
+              to="/protect"
+              search={{ type: undefined, asset: undefined }}
               className="border border-ink/30 px-4 py-2 text-xs font-medium text-ink hover:bg-ink/5"
             >
-              {connected ? "Disconnect (mock)" : "Connect Wallet (mock)"}
-            </button>
+              Get protection
+            </Link>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-px border border-hairline bg-hairline md:grid-cols-3 lg:grid-cols-6">
-            <Summary k="Total protections" v={String(summary.total)} />
-            <Summary k="Active" v={String(summary.ACTIVE)} tone="success" />
-            <Summary k="Triggered" v={String(summary.TRIGGERED)} tone="danger" />
-            <Summary k="Paid" v={String(summary.PAID)} />
-            <Summary k="Expired" v={String(summary.EXPIRED)} />
-            <Summary k="Cancelled" v={String(summary.CANCELLED)} />
-          </div>
+          {!runtimeEnv.contractConfigured && <ConfigError />}
+          {!writer.wallet.isConnected && (
+            <EmptyState
+              title="Connect your wallet"
+              body="Connect a compatible browser wallet to view your protections and submit contract actions."
+              action={<ConnectButton />}
+            />
+          )}
+          {writer.wallet.isWrongNetwork && (
+            <EmptyState
+              title="Wrong network"
+              body="Switch to GenLayer Bradbury before reading wallet-scoped policies or submitting transactions."
+              action={
+                <button
+                  className="bg-ink px-4 py-2 text-sm text-paper"
+                  onClick={() => void writer.wallet.switchToBradbury()}
+                >
+                  Switch to GenLayer Bradbury
+                </button>
+              }
+            />
+          )}
 
-          <div className="mt-8 flex flex-wrap gap-2">
-            {(["ALL", ...STATUSES] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={`border px-3 py-1.5 text-[10px] uppercase tracking-widest ${
-                  filter === s
-                    ? "border-ink bg-ink text-paper"
-                    : "border-hairline text-muted-ink hover:border-ink/40"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8">
-            {!connected ? (
-              <EmptyState
-                title="Connect your wallet"
-                body="Connect a wallet to see the protections it owns."
-              />
-            ) : filtered.length === 0 ? (
-              <EmptyState
-                title="No protections in this view"
-                body="Try a different filter, or buy your first protection."
-                action={
-                  <Link to="/protect" className="inline-flex bg-ink px-4 py-2 text-sm text-paper">
-                    Get Protection
-                  </Link>
-                }
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {filtered.map((p) => (
-                  <PolicyCard key={p.id} p={p} onOpen={() => setSelected(p)} />
-                ))}
-              </div>
+          {writer.wallet.isConnected &&
+            !writer.wallet.isWrongNetwork &&
+            runtimeEnv.contractConfigured && (
+              <>
+                <div className="mt-8 grid grid-cols-2 gap-px border border-hairline bg-hairline md:grid-cols-3 lg:grid-cols-6">
+                  <Summary k="Total protections" v={summary?.protection_count ?? "--"} />
+                  <Summary k="Active" v={summary?.active_count ?? "--"} tone="success" />
+                  <Summary k="Triggered" v={summary?.triggered_count ?? "--"} tone="danger" />
+                  <Summary k="Paid" v={summary?.paid_count ?? "--"} />
+                  <Summary k="Expired" v={summary?.expired_count ?? "--"} />
+                  <Summary k="Cancelled" v={summary?.cancelled_count ?? "--"} />
+                </div>
+                <div className="mt-8">
+                  {dashboard.isLoading ? (
+                    <LoadingState
+                      title="Loading protections"
+                      body="Loading the protections associated with your connected wallet."
+                    />
+                  ) : dashboard.error ? (
+                    <ContractErrorMessage error={dashboard.error} />
+                  ) : !summary || summary.protections.length === 0 ? (
+                    <EmptyState
+                      title="No protections yet"
+                      body="Your connected wallet does not currently hold any Hedgix protections."
+                      action={
+                        <Link
+                          to="/protect"
+                          search={{ type: undefined, asset: undefined }}
+                          className="inline-flex bg-ink px-4 py-2 text-sm text-paper"
+                        >
+                          Explore protection options
+                        </Link>
+                      }
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                      {summary.protections.map((policy) => (
+                        <PolicyCard key={policy.protection_id} policy={policy} writer={writer} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-          </div>
         </div>
       </section>
-
-      {selected && <PolicyDrawer p={selected} onClose={() => setSelected(null)} />}
+      <TransactionDialog
+        open={writer.transaction.open}
+        actionTitle={writer.transaction.action}
+        progress={writer.transaction.progress}
+        error={writer.transaction.error}
+        onOpenChange={writer.transaction.setOpen}
+        onContinueChecking={writer.transaction.continueCheckingStatus}
+      />
     </AppLayout>
+  );
+}
+
+function PolicyCard({
+  policy,
+  writer,
+}: {
+  policy: DashboardProtectionRow;
+  writer: ReturnType<typeof useHedgixWrite>;
+}) {
+  const detail = usePolicy(policy.protection_id, writer.wallet.address);
+  const fullPolicy = detail.data;
+  const market = fullPolicy?.binance_settlement_symbol ?? policy.binance_settlement_symbol ?? "";
+  const statusPolicy = { status: policy.status } as Pick<ContractPolicy, "status">;
+  const mappedCancel = writer.cancel.error ? mapHedgixError(writer.cancel.error) : null;
+  const mappedClaim = writer.claim.error ? mapHedgixError(writer.claim.error) : null;
+  const activity = protectionActivityLabel(policy);
+  const cancellationPending =
+    writer.cancel.isPending && String(writer.cancel.variables ?? "") === policy.protection_id;
+  const claimPending =
+    writer.claim.isPending && String(writer.claim.variables ?? "") === policy.protection_id;
+
+  return (
+    <article className="border border-hairline bg-paper transition-colors hover:border-ink/30">
+      <header className="flex items-start justify-between border-b border-hairline p-6">
+        <div>
+          <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-ink">
+            <span>{activity}</span>
+            <span className="h-1 w-1 bg-current" />
+            <span>Reference {policy.protection_id}</span>
+          </div>
+          <h3 className="mt-2 font-serif text-3xl text-ink">{policyDisplayName(policy)}</h3>
+          <div className="mt-1 text-sm text-muted-ink">{market}</div>
+        </div>
+        <StatusPill status={policy.status} />
+      </header>
+      <div className="grid gap-4 p-6 md:grid-cols-[1.1fr_0.9fr]">
+        <div className="border border-hairline bg-stone p-4">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-ink">
+            Monitoring status
+          </div>
+          <div className="mt-3 font-serif text-2xl text-ink">{activity}</div>
+          <p className="mt-2 text-sm leading-relaxed text-muted-ink">
+            {settlementStatusLine(policy)}
+          </p>
+          {triggerDistanceText(policy) && (
+            <p className="mt-3 border-t border-hairline pt-3 text-sm text-ink">
+              {triggerDistanceText(policy)}
+            </p>
+          )}
+        </div>
+        <dl className="text-sm">
+          <Field k="Locked reference price">{formatUsdPrice(policy.reference_price_display)}</Field>
+          <Field k="Trigger condition">
+            {fullPolicy
+              ? triggerConditionLine(fullPolicy)
+              : formatUsdPrice(policy.trigger_price_display)}
+          </Field>
+          <Field k="Eligible payout">{weiToGen(policy.payout_amount)}</Field>
+          <Field k="Reserved payout">{weiToGen(policy.reserved_payout)}</Field>
+          <Field k="Coverage">
+            {formatUtcDate(policy.coverage_start_date)} to {formatUtcDate(policy.coverage_end_date)}
+          </Field>
+          <Field k="Next settlement">{formatUtcDate(policy.expected_settlement_date)}</Field>
+        </dl>
+      </div>
+      <Timeline policy={policy} />
+      <div className="flex flex-wrap gap-2 border-t border-hairline p-4">
+        <Link
+          to="/policy/$id"
+          params={{ id: policy.protection_id }}
+          className="flex-1 border border-ink/30 px-3 py-2 text-center text-xs font-medium text-ink hover:bg-ink/5"
+        >
+          View details
+        </Link>
+        {canClaim(statusPolicy) && (
+          <button
+            onClick={() =>
+              void writer.claim.mutateAsync(policy.protection_id).catch(() => undefined)
+            }
+            className="flex-1 bg-ink px-3 py-2 text-xs font-medium text-paper disabled:opacity-50"
+            disabled={claimPending || writer.wallet.isWrongNetwork}
+          >
+            {claimPending ? "Claim in progress" : "Claim payout"}
+          </button>
+        )}
+        {canCancel(statusPolicy) && (
+          <button
+            onClick={() =>
+              void writer.cancel.mutateAsync(policy.protection_id).catch(() => undefined)
+            }
+            className="flex-1 border border-hairline px-3 py-2 text-xs font-medium text-muted-ink hover:bg-ink/5 disabled:opacity-50"
+            disabled={cancellationPending || writer.wallet.isWrongNetwork}
+          >
+            {cancellationPending ? "Cancellation in progress" : "Cancel protection"}
+          </button>
+        )}
+        <span className="basis-full text-xs text-muted-ink">
+          {settlementReadinessText({
+            ready: policy.settlement_ready,
+            reason: policy.settlement_ready ? "" : "Waiting for the daily candle to close",
+            expected_settlement_date: policy.expected_settlement_date,
+          })}
+        </span>
+        {(mappedCancel || mappedClaim) && (
+          <ContractErrorMessage mapped={mappedCancel ?? mappedClaim} className="basis-full" />
+        )}
+      </div>
+    </article>
+  );
+}
+
+function protectionActivityLabel(policy: DashboardProtectionRow): string {
+  if (policy.status === "TRIGGERED") return "Payout available";
+  if (policy.status === "PAID") return "Paid";
+  if (policy.status === "EXPIRED") return "Coverage expired";
+  if (policy.status === "CANCELLED") return "Cancelled";
+  if (policy.settlement_ready) return "Settlement ready";
+  if (policy.last_settled_date) return "Latest daily settlement completed";
+  return "Monitoring market";
+}
+
+function settlementStatusLine(policy: DashboardProtectionRow): string {
+  if (policy.status === "TRIGGERED") {
+    return "The trigger condition has been verified. The reserved payout is available to claim.";
+  }
+  if (policy.status === "PAID") return "The reserved payout has been claimed.";
+  if (policy.status === "EXPIRED") return "Coverage completed without a verified trigger.";
+  if (policy.status === "CANCELLED") return "This protection is no longer active.";
+  if (policy.settlement_ready) {
+    return `The ${formatUtcDate(policy.expected_settlement_date)} candle is ready for settlement.`;
+  }
+  return policy.last_settled_date
+    ? `Settled through ${formatUtcDate(policy.last_settled_date)}. Waiting for the next closed daily candle.`
+    : "Waiting for the first closed daily candle in the coverage period.";
+}
+
+function triggerDistanceText(policy: DashboardProtectionRow): string | null {
+  if (!policy.last_daily_low_display || !policy.trigger_price_display) return null;
+  const low = decimalToScaled(policy.last_daily_low_display);
+  const trigger = decimalToScaled(policy.trigger_price_display);
+  if (low === null || trigger === null || trigger === 0n) return null;
+  if (low <= trigger) {
+    return `Latest daily low ${formatUsdPrice(policy.last_daily_low_display)} is at or below the trigger.`;
+  }
+  const bps = ((low - trigger) * 10_000n) / trigger;
+  const whole = bps / 100n;
+  const fraction = bps % 100n;
+  const percent = `${whole}.${fraction.toString().padStart(2, "0")}%`;
+  return `Latest daily low ${formatUsdPrice(policy.last_daily_low_display)} is ${percent} above the stored trigger.`;
+}
+
+function decimalToScaled(value: string): bigint | null {
+  if (!/^\d+(\.\d+)?$/.test(value)) return null;
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole) * 100_000_000n + BigInt(fraction.padEnd(8, "0").slice(0, 8));
+}
+
+function Timeline({ policy }: { policy: DashboardProtectionRow }) {
+  const events = [
+    { label: "Purchased", value: policy.purchase_date },
+    { label: "Latest settlement", value: policy.last_settled_date },
+    { label: "Triggered", value: policy.triggered_date },
+    { label: "Paid", value: policy.paid_date },
+    { label: "Cancelled", value: policy.cancelled_date },
+    { label: "Coverage ends", value: policy.coverage_end_date },
+  ].filter((event) => event.value);
+
+  return (
+    <div className="border-t border-hairline px-6 py-4">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-ink">
+        Protection timeline
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {events.map((event) => (
+          <span
+            key={`${event.label}-${event.value}`}
+            className="border border-hairline px-2 py-1 text-xs text-muted-ink"
+          >
+            <span className="text-ink">{event.label}</span> {formatUtcDate(event.value)}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -121,7 +342,9 @@ function Summary({ k, v, tone }: { k: string; v: string; tone?: "success" | "dan
     <div className="bg-paper p-5 md:p-6">
       <div className="text-[10px] uppercase tracking-[0.2em] text-muted-ink">{k}</div>
       <div
-        className={`mt-3 font-serif text-4xl leading-none tracking-tight md:text-5xl ${tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : "text-ink"}`}
+        className={`mt-3 font-serif text-4xl leading-none tracking-tight md:text-5xl ${
+          tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : "text-ink"
+        }`}
       >
         {v}
       </div>
@@ -129,129 +352,29 @@ function Summary({ k, v, tone }: { k: string; v: string; tone?: "success" | "dan
   );
 }
 
-function StatusPill({ status }: { status: PolicyStatus }) {
-  const map: Record<PolicyStatus, string> = {
-    ACTIVE: "border-success/40 text-success bg-success/8",
-    TRIGGERED: "border-danger/40 text-danger bg-danger/10",
-    PAID: "border-ink/30 text-ink bg-ink/5",
-    EXPIRED: "border-hairline text-muted-ink bg-stone",
-    CANCELLED: "border-hairline text-muted-ink bg-stone",
-  };
+function StatusPill({ status }: { status: ProtectionStatus | string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] ${map[status]}`}
+      className={`inline-flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] ${statusBadgeClass(status)}`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" /> {status}
     </span>
   );
 }
 
-function PolicyCard({ p, onOpen }: { p: Policy; onOpen: () => void }) {
-  return (
-    <article className="border border-hairline bg-paper">
-      <header className="flex items-start justify-between border-b border-hairline p-6">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.22em] text-muted-ink">
-            Policy #{p.id}
-          </div>
-          <h3 className="mt-2 font-serif text-3xl text-ink">{p.asset}</h3>
-          <div className="mt-1 text-sm text-muted-ink">
-            {p.type} · {p.level}
-          </div>
-        </div>
-        <StatusPill status={p.status} />
-      </header>
-      <dl className="grid grid-cols-2 gap-x-6 p-6 text-sm">
-        <Field k="Reference">{p.referencePrice}</Field>
-        <Field k="Trigger">{p.triggerPrice}</Field>
-        <Field k="Start">{p.coverageStart}</Field>
-        <Field k="End">{p.coverageEnd}</Field>
-        <Field k="Premium">{p.premium}</Field>
-        <Field k="Payout">{p.payout}</Field>
-      </dl>
-      <div className="flex gap-2 border-t border-hairline p-4">
-        <button
-          onClick={onOpen}
-          className="flex-1 border border-ink/30 px-3 py-2 text-xs font-medium text-ink hover:bg-ink/5"
-        >
-          Open details
-        </button>
-        <button
-          className="flex-1 bg-ink px-3 py-2 text-xs font-medium text-paper hover:bg-ink/90 disabled:opacity-50"
-          disabled={p.status !== "TRIGGERED"}
-        >
-          Claim payout
-        </button>
-        <button
-          className="flex-1 border border-hairline px-3 py-2 text-xs font-medium text-muted-ink hover:bg-ink/5 disabled:opacity-50"
-          disabled={p.status !== "ACTIVE"}
-        >
-          Cancel
-        </button>
-      </div>
-    </article>
-  );
-}
-
 function Field({ k, children }: { k: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between border-b border-hairline py-2">
+    <div className="flex items-baseline justify-between gap-4 border-b border-hairline py-2">
       <dt className="text-muted-ink">{k}</dt>
-      <dd className="tabular-nums text-ink">{children}</dd>
+      <dd className="text-right tabular-nums text-ink">{children}</dd>
     </div>
   );
 }
 
-function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
+function ConfigError() {
   return (
-    <div className="border border-dashed border-hairline bg-paper p-12 text-center">
-      <h3 className="font-serif text-2xl text-ink">{title}</h3>
-      <p className="mx-auto mt-3 max-w-md text-sm text-muted-ink">{body}</p>
-      {action && <div className="mt-6">{action}</div>}
-    </div>
-  );
-}
-
-function PolicyDrawer({ p, onClose }: { p: Policy; onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-ink/40 p-4 md:items-center"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-2xl border border-hairline bg-paper"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-start justify-between border-b border-hairline p-6 md:p-8">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.22em] text-muted-ink">
-              Policy #{p.id} · /policy/{p.id}
-            </div>
-            <h2 className="mt-2 font-serif text-4xl text-ink">{p.asset}</h2>
-            <div className="mt-1 text-sm text-muted-ink">
-              {p.type} · {p.level}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="border border-hairline px-3 py-1.5 text-xs text-muted-ink hover:bg-ink/5"
-          >
-            Close
-          </button>
-        </header>
-        <dl className="grid grid-cols-1 gap-x-8 p-6 md:grid-cols-2 md:p-8">
-          <Field k="Status">{p.status}</Field>
-          <Field k="Settlement symbol">{p.settlementSymbol ?? p.asset}</Field>
-          <Field k="Reference price">{p.referencePrice}</Field>
-          <Field k="Trigger price">{p.triggerPrice}</Field>
-          <Field k="Coverage start">{p.coverageStart}</Field>
-          <Field k="Coverage end">{p.coverageEnd}</Field>
-          <Field k="Expected settlement">{p.expectedSettlement}</Field>
-          <Field k="Settlement readiness">{p.settlementReadiness}</Field>
-          <Field k="Premium">{p.premium}</Field>
-          <Field k="Potential payout">{p.payout}</Field>
-        </dl>
-      </div>
+    <div className="mt-8 border border-danger/30 bg-danger/10 p-5 text-sm text-danger">
+      {runtimeEnv.contractError}
     </div>
   );
 }

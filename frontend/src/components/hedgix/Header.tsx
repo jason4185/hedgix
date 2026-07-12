@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { LogoMark, Wordmark } from "./Logo";
 
 const nav = [
@@ -11,6 +12,12 @@ const nav = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [hasInjectedWallet, setHasInjectedWallet] = useState(true);
+
+  useEffect(() => {
+    setHasInjectedWallet(typeof window !== "undefined" && Boolean(window.ethereum));
+  }, []);
+
   return (
     <header className="relative z-30 border-b border-ink/10 bg-amber">
       <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-5 md:px-10 md:py-7">
@@ -33,6 +40,11 @@ export function Header() {
           ))}
         </nav>
         <div className="hidden items-center gap-3 md:flex">
+          <ConnectButton
+            accountStatus={{ smallScreen: "avatar", largeScreen: "full" }}
+            chainStatus={{ smallScreen: "icon", largeScreen: "name" }}
+            showBalance
+          />
           <Link
             to="/dashboard"
             className="border border-ink/30 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-ink/5"
@@ -41,6 +53,7 @@ export function Header() {
           </Link>
           <Link
             to="/protect"
+            search={{ type: undefined, asset: undefined }}
             className="bg-ink px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-ink/90"
           >
             Get Protection
@@ -75,6 +88,13 @@ export function Header() {
               </Link>
             ))}
             <div className="mt-4 flex flex-col gap-2">
+              <div className="mb-2">
+                <ConnectButton
+                  accountStatus={{ smallScreen: "avatar", largeScreen: "full" }}
+                  chainStatus={{ smallScreen: "icon", largeScreen: "name" }}
+                  showBalance
+                />
+              </div>
               <Link
                 to="/dashboard"
                 onClick={() => setOpen(false)}
@@ -84,6 +104,7 @@ export function Header() {
               </Link>
               <Link
                 to="/protect"
+                search={{ type: undefined, asset: undefined }}
                 onClick={() => setOpen(false)}
                 className="bg-ink px-4 py-2.5 text-center text-sm text-paper"
               >
@@ -91,6 +112,12 @@ export function Header() {
               </Link>
             </div>
           </div>
+        </div>
+      )}
+      {!hasInjectedWallet && (
+        <div className="border-t border-ink/10 bg-stone px-6 py-2 text-center text-xs text-muted-ink">
+          No compatible browser wallet was detected. Install a browser wallet that supports custom
+          EVM networks, then reload Hedgix.
         </div>
       )}
     </header>

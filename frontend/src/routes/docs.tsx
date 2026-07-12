@@ -34,8 +34,8 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     body: (
       <p>
         Two products are available: <strong>Price Drop Protection</strong> for BTCUSDT, ETHUSDT,
-        SOLUSDT, and BNBUSDT; and <strong>Depeg Protection</strong> for USDC, measured through
-        USDCUSDT.
+        SOLUSDT, and BNBUSDT; and <strong>Stablecoin Depeg Protection</strong> for USDT and USDC,
+        measured directly against USD through USDTUSD and USDCUSD.
       </p>
     ),
   },
@@ -58,7 +58,8 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     body: (
       <p>
         Connect a wallet, choose a product, pick asset / event level / duration, review the summary,
-        and submit. The contract verifies terms and fetches reference market data.
+        and submit. The contract verifies registry terms, checks the premium, and fetches the
+        Binance live ticker during transaction execution.
       </p>
     ),
   },
@@ -73,12 +74,13 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     ),
   },
   {
-    id: "reference-price",
-    t: "Reference price",
+    id: "locked-reference-price",
+    t: "Locked reference price",
     body: (
       <p>
-        The reference price is fetched from Binance at policy start and stored on-chain. It is the
-        anchor against which triggers are evaluated.
+        The locked reference price is fetched from Binance during purchase and stored in the policy
+        record. For price-drop products it anchors the calculated trigger price. For depeg products
+        it confirms the asset was above the absolute USD threshold when purchased.
       </p>
     ),
   },
@@ -91,7 +93,7 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
         <code className="rounded bg-stone px-1.5 py-0.5 font-mono text-xs">
           trigger = reference × (1 − pct)
         </code>
-        . For depeg, the threshold is a fixed absolute value like 0.998.
+        . For depeg, the threshold is a stored absolute USD value such as 0.998, 0.996, or 0.994.
       </p>
     ),
   },
@@ -100,8 +102,9 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     t: "Settlement process",
     body: (
       <p>
-        After each closed daily candle, the contract fetches the daily low and compares it against
-        the stored trigger. If breached, the policy transitions to TRIGGERED.
+        Each settlement transaction checks the exact next expected UTC date. Open daily candles
+        cannot be settled. The contract fetches the closed Binance daily low and compares it against
+        the stored trigger.
       </p>
     ),
   },
@@ -110,8 +113,8 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     t: "Claim process",
     body: (
       <p>
-        The wallet owner of a TRIGGERED policy can claim the payout from the pool. Once claimed,
-        status becomes PAID.
+        The policyholder of a Triggered protection can submit a claim transaction to receive the
+        reserved payout from the pool. Once claimed, status becomes Paid.
       </p>
     ),
   },
@@ -120,8 +123,8 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     t: "Cancellation",
     body: (
       <p>
-        ACTIVE policies may be cancellable under conditions defined by the registry. Cancelled
-        policies transition to CANCELLED and release their reservation.
+        ACTIVE policies can be cancelled by the policyholder. Cancellation releases the reserved
+        liability but does not imply an automatic premium refund.
       </p>
     ),
   },
@@ -145,8 +148,9 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     t: "Registry",
     body: (
       <p>
-        The registry lists every supported product term. The contract fetches and verifies it
-        independently of the frontend.
+        The registry lists every supported product term. The contract independently verifies the
+        selected product, asset, event level, duration, premium, payout, trigger rule, and Binance
+        symbol. Existing policy records preserve the terms stored at purchase.
       </p>
     ),
   },
@@ -171,7 +175,8 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     body: (
       <p>
         Common errors include insufficient premium, unsupported term, mismatched registry version,
-        and settlement not yet ready.
+        insufficient pool capacity, settlement not yet ready, open daily candle, and already-claimed
+        payout.
       </p>
     ),
   },
@@ -180,7 +185,8 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
     t: "Risks and limitations",
     body: (
       <p>
-        MVP uses a single market data source and a small validator set. See the{" "}
+        MVP uses Binance as the only market data source, an externally hosted versioned registry,
+        and transaction-submitted settlement. See the{" "}
         <a className="text-violet underline" href="/transparency">
           Transparency
         </a>{" "}
@@ -200,6 +206,10 @@ const sections: { id: string; t: string; body: ReactNode }[] = [
         <li>
           <strong className="text-ink">Does the frontend influence outcome?</strong> No. Only
           registry + Binance data + the contract determine settlement.
+        </li>
+        <li>
+          <strong className="text-ink">Are payouts automatic?</strong> No. A Triggered policyholder
+          submits a claim transaction to receive the reserved payout.
         </li>
         <li>
           <strong className="text-ink">Can I be liquidated?</strong> No. There is no leverage and no

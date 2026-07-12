@@ -70,7 +70,7 @@ function VizDepeg() {
         className="fill-current text-[9px] uppercase tracking-widest"
         opacity="0.6"
       >
-        USDCUSDT · peg 1.00
+        USDTUSD / USDCUSD · direct USD
       </text>
       <text x="315" y="146" className="fill-current text-[9px]" style={{ fill: "var(--violet)" }}>
         0.998
@@ -174,7 +174,7 @@ const cards: Card[] = [
   {
     label: "Depeg Protection",
     title: "Coverage for stablecoin instability.",
-    body: "Protect against defined USDC depeg thresholds using the verified USDCUSDT market pair.",
+    body: "Protect USDT or USDC against direct USD depeg events using verified Binance USDTUSD and USDCUSD daily lows.",
     viz: <VizDepeg />,
     span: "lg:col-span-5",
     accent: true,
@@ -189,7 +189,7 @@ const cards: Card[] = [
   {
     label: "Transparent Policy Records",
     title: "Every important term remains visible.",
-    body: "Reference prices, trigger levels, dates, payout amounts, and policy status remain available to the policyholder.",
+    body: "Locked reference prices, trigger levels, dates, payout amounts, and policy status remain available to the policyholder.",
     viz: <VizRecords />,
     span: "lg:col-span-7",
   },
@@ -205,7 +205,7 @@ export function ProductGrid() {
               <Sym.Cross className="h-3 w-3" /> Products
             </div>
             <h2 className="max-w-2xl font-serif text-4xl leading-[1.02] tracking-tight text-ink md:text-5xl">
-              Four <span className="italic">defined</span> protection primitives.
+              Two <span className="italic">defined</span> protection groups.
             </h2>
           </div>
         </div>

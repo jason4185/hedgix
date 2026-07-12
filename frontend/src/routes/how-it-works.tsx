@@ -33,23 +33,23 @@ const steps = [
   },
   {
     n: "03",
-    t: "Registry fetch",
-    b: "The contract fetches the official Hedgix registry — not the frontend.",
+    t: "Review registry terms",
+    b: "The interface shows supported products, assets, event levels, durations, premiums, payouts, and Binance symbols from the registry.",
   },
   {
     n: "04",
-    t: "Verify terms",
-    b: "Protected asset, protection type, level, duration, premium, payout, Binance symbol, and trigger rule are re-verified on-chain.",
+    t: "Submit purchase",
+    b: "The contract re-fetches and verifies the registry terms, including duration, premium, payout, trigger rule, and Binance symbol.",
   },
   {
     n: "05",
-    t: "Fetch market data",
-    b: "The contract fetches Binance reference data via GenLayer's verified fetch.",
+    t: "Fetch Binance ticker",
+    b: "During the purchase transaction, the contract fetches the Binance live ticker and stores the Locked reference price.",
   },
   {
     n: "06",
-    t: "Store reference & trigger",
-    b: "The exact reference price and computed trigger price are written to the policy record.",
+    t: "Store Locked reference price & trigger",
+    b: "The exact Locked reference price, reference timestamp, trigger price, coverage dates, premium, and payout are written to the policy record.",
   },
   {
     n: "07",
@@ -58,18 +58,23 @@ const steps = [
   },
   {
     n: "08",
-    t: "Daily settlement",
-    b: "After each closed candle, the contract fetches the verified daily low and compares it to the stored trigger.",
+    t: "Sequential settlement",
+    b: "Each closed Binance daily candle is checked in order. Open candles and skipped dates are rejected.",
   },
   {
     n: "09",
-    t: "Policy state",
-    b: "Status transitions between ACTIVE, TRIGGERED, PAID, EXPIRED, and CANCELLED — all on-chain.",
+    t: "Compare daily low",
+    b: "The daily low is compared with the stored trigger. Depeg thresholds are absolute USD values; price-drop triggers come from the Locked reference price.",
   },
   {
     n: "10",
+    t: "Policy state",
+    b: "Status transitions between ACTIVE, TRIGGERED, PAID, EXPIRED, and CANCELLED are stored by the contract.",
+  },
+  {
+    n: "11",
     t: "Claim payout",
-    b: "If the policy is TRIGGERED, the wallet owner claims the payout from the pool.",
+    b: "If the protection is Triggered, the policyholder submits a claim transaction to receive the reserved payout from the underwriting pool.",
   },
 ];
 
