@@ -108,7 +108,10 @@ function AdminPage() {
                 className="mt-3 w-full bg-ink px-3 py-2 text-sm text-paper disabled:opacity-50"
                 type="button"
                 disabled={
-                  !canUseOwnerControls || writer.wallet.isWrongNetwork || writer.addFunds.isPending
+                  !canUseOwnerControls ||
+                  writer.wallet.isWrongNetwork ||
+                  writer.addFunds.isPending ||
+                  writer.transaction.blocksResubmission
                 }
                 onClick={() => void addFunds()}
               >
@@ -127,7 +130,10 @@ function AdminPage() {
                 className="mt-3 w-full border border-ink/30 px-3 py-2 text-sm disabled:opacity-50"
                 type="button"
                 disabled={
-                  !canUseOwnerControls || writer.wallet.isWrongNetwork || writer.withdraw.isPending
+                  !canUseOwnerControls ||
+                  writer.wallet.isWrongNetwork ||
+                  writer.withdraw.isPending ||
+                  writer.transaction.blocksResubmission
                 }
                 onClick={() => void withdrawFunds()}
               >
@@ -151,7 +157,10 @@ function AdminPage() {
                 className="mt-3 w-full border border-ink/30 px-3 py-2 text-sm disabled:opacity-50"
                 type="button"
                 disabled={
-                  !canUseOwnerControls || !isAddress(operator) || writer.setOperator.isPending
+                  !canUseOwnerControls ||
+                  !isAddress(operator) ||
+                  writer.setOperator.isPending ||
+                  writer.transaction.blocksResubmission
                 }
                 onClick={() => void changeOperator()}
               >
@@ -161,7 +170,11 @@ function AdminPage() {
                 <button
                   className="border border-ink/30 px-3 py-2 text-sm disabled:opacity-50"
                   type="button"
-                  disabled={!canUseOwnerControls || writer.pause.isPending}
+                  disabled={
+                    !canUseOwnerControls ||
+                    writer.pause.isPending ||
+                    writer.transaction.blocksResubmission
+                  }
                   onClick={() => void writer.pause.mutateAsync().catch(() => undefined)}
                 >
                   Pause contract
@@ -169,7 +182,11 @@ function AdminPage() {
                 <button
                   className="bg-ink px-3 py-2 text-sm text-paper disabled:opacity-50"
                   type="button"
-                  disabled={!canUseOwnerControls || writer.unpause.isPending}
+                  disabled={
+                    !canUseOwnerControls ||
+                    writer.unpause.isPending ||
+                    writer.transaction.blocksResubmission
+                  }
                   onClick={() => void writer.unpause.mutateAsync().catch(() => undefined)}
                 >
                   Resume contract
@@ -187,7 +204,7 @@ function AdminPage() {
                   <ActivePolicyRow
                     key={id}
                     id={id}
-                    allowed={canUseSettlementControls}
+                    allowed={canUseSettlementControls && !writer.transaction.blocksResubmission}
                     account={writer.wallet.address}
                     settling={writer.settle.isPending}
                     onSettle={(protectionId, settlementDate) =>

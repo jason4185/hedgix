@@ -56,12 +56,12 @@ const stageCopy: Record<TransactionStage, { title: string; body: string }> = {
     body: "GenLayer is comparing validator outputs before consensus.",
   },
   accepted: {
-    title: "Accepted successful execution",
-    body: "Validator consensus accepted the transaction. Hedgix is now refreshing contract state before showing final success.",
+    title: "Transaction accepted",
+    body: "GenLayer accepted this transaction. Hedgix is checking the latest contract state.",
   },
   confirming: {
-    title: "Confirming on-chain state",
-    body: "Hedgix is reading the contract again to confirm the expected policy or pool update.",
+    title: "Transaction accepted",
+    body: "GenLayer accepted this transaction. Hedgix is checking the latest contract state.",
   },
   completed: {
     title: "Contract state confirmed",
@@ -94,13 +94,30 @@ const flowStages: TransactionStage[] = [
   "awaiting_signature",
   "submitted",
   "consensus",
-  "proposing",
-  "committing",
-  "revealing",
   "accepted",
   "confirming",
   "completed",
 ];
+
+const stageLabels: Record<TransactionStage, string> = {
+  idle: "Review",
+  review: "Review",
+  preparing: "Preparing",
+  awaiting_signature: "Awaiting signature",
+  submitted: "Submitted",
+  consensus: "Consensus",
+  proposing: "Consensus",
+  committing: "Consensus",
+  revealing: "Consensus",
+  accepted: "Accepted",
+  confirming: "Confirming state",
+  completed: "Completed",
+  finalized: "Completed",
+  cancelled: "Awaiting signature",
+  undetermined: "Consensus",
+  failed: "Failed",
+  timeout: "Consensus",
+};
 
 function safeStringify(value: unknown): string {
   return (
@@ -127,6 +144,12 @@ export function TransactionDialog({
   const stage = progress.stage === "idle" ? "review" : progress.stage;
   const copy = stageCopy[stage] ?? stageCopy.submitted;
   const isReview = stage === "review";
+  const isAcceptedSyncing = progress.outcome === "accepted_syncing";
+  const statusTitle = isAcceptedSyncing ? "Transaction accepted" : copy.title;
+  const statusBody = isAcceptedSyncing
+    ? "GenLayer accepted this transaction. Hedgix is checking the latest contract state."
+    : copy.body;
+  const acceptedSyncingWarning = progress.warning ?? "Latest state not available yet";
   const isBusy = [
     "awaiting_signature",
     "preparing",
@@ -138,7 +161,6 @@ export function TransactionDialog({
     "confirming",
   ].includes(stage);
   const isTerminal = [
-    "accepted",
     "completed",
     "finalized",
     "failed",
@@ -155,10 +177,10 @@ export function TransactionDialog({
           <div className="flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="font-serif text-3xl leading-tight text-ink">
-                {isReview ? actionTitle : copy.title}
+                {isReview ? actionTitle : statusTitle}
               </Dialog.Title>
               <Dialog.Description className="mt-2 text-sm leading-relaxed text-muted-ink">
-                {isReview ? actionDescription : copy.body}
+                {isReview ? actionDescription : statusBody}
               </Dialog.Description>
             </div>
             <Dialog.Close
@@ -170,7 +192,7 @@ export function TransactionDialog({
           </div>
 
           <div className="sr-only" aria-live="polite">
-            {copy.title}
+            {statusTitle}
           </div>
 
           {reviewItems.length > 0 && (
@@ -190,18 +212,20 @@ export function TransactionDialog({
             <div className="mt-6 space-y-5">
               <div className="border border-hairline bg-stone p-4 text-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-[10px] uppercase tracking-[0.22em] text-muted-ink">
-                      Current stage
+                      Current status
                     </div>
-                    <div className="mt-1 font-medium text-ink">{copy.title}</div>
+                    <div className="mt-1 font-medium text-ink">
+                      {isAcceptedSyncing ? "Accepted on-chain" : statusTitle}
+                    </div>
                     {progress.detail && (
                       <p className="mt-1 text-xs leading-relaxed text-muted-ink">
                         {progress.detail}
                       </p>
                     )}
                   </div>
-                  <div className="text-left text-xs text-muted-ink sm:text-right">
+                  <div className="min-w-0 text-left text-xs text-muted-ink sm:text-right">
                     {progress.status && <div>Status: {String(progress.status)}</div>}
                     {progress.checkedAt && (
                       <div>Last checked: {new Date(progress.checkedAt).toLocaleTimeString()}</div>
@@ -214,6 +238,8 @@ export function TransactionDialog({
                 busy={isBusy}
                 hasHash={Boolean(progress.hash)}
                 errorCode={error?.code}
+                failedStage={progress.failedStage}
+                acceptedSyncing={isAcceptedSyncing}
               />
               {progress.hash && (
                 <div className="border border-hairline bg-paper p-4 text-xs">
@@ -233,20 +259,31 @@ export function TransactionDialog({
                   )}
                 </div>
               )}
+              {isAcceptedSyncing && (
+                <div className="border border-amber-deep/40 bg-amber/25 p-4 text-sm">
+                  <div className="font-medium text-ink">{acceptedSyncingWarning}</div>
+                  <p className="mt-2 leading-relaxed text-muted-ink">
+                    The transaction is already accepted on-chain, but Hedgix could not load the
+                    updated contract state yet. Do not submit it again.
+                  </p>
+                </div>
+              )}
               {progress.technicalDetails && (
                 <TechnicalDetails label="Submission details">
                   {progress.technicalDetails}
                 </TechnicalDetails>
               )}
-              {progress.receipt && (
-                <TechnicalDetails label="Receipt details">
-                  {safeStringify(progress.receipt)}
+              {(progress.receipt || progress.stateConfirmationDetails) && (
+                <TechnicalDetails label="Receipt/state-confirmation details">
+                  {progress.receipt ? safeStringify(progress.receipt) : ""}
+                  {progress.receipt && progress.stateConfirmationDetails ? "\n\n" : ""}
+                  {progress.stateConfirmationDetails ?? ""}
                 </TechnicalDetails>
               )}
             </div>
           )}
 
-          {error && <ContractErrorMessage mapped={error} className="mt-5" />}
+          {error && !isAcceptedSyncing && <ContractErrorMessage mapped={error} className="mt-5" />}
 
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             {isReview ? (
@@ -264,7 +301,15 @@ export function TransactionDialog({
               </>
             ) : (
               <>
-                {stage === "timeout" || stage === "undetermined" ? (
+                {isAcceptedSyncing ? (
+                  <button
+                    type="button"
+                    onClick={onContinueChecking}
+                    className="bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/90"
+                  >
+                    Retry state check
+                  </button>
+                ) : stage === "timeout" || stage === "undetermined" ? (
                   <button
                     type="button"
                     onClick={onContinueChecking}
@@ -273,11 +318,21 @@ export function TransactionDialog({
                     Continue checking status
                   </button>
                 ) : null}
+                {isAcceptedSyncing && progress.explorerUrl ? (
+                  <a
+                    className="border border-hairline px-4 py-2 text-center text-sm text-ink hover:bg-ink/5"
+                    href={progress.explorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View transaction
+                  </a>
+                ) : null}
                 <Dialog.Close
-                  disabled={!isTerminal && isBusy}
+                  disabled={!isAcceptedSyncing && !isTerminal && isBusy}
                   className="border border-hairline px-4 py-2 text-sm text-ink hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isTerminal ? "Close" : "Keep tracking"}
+                  {isTerminal || isAcceptedSyncing ? "Close" : "Keep tracking"}
                 </Dialog.Close>
               </>
             )}
@@ -293,26 +348,32 @@ function TransactionProgressLine({
   busy,
   hasHash,
   errorCode,
+  failedStage,
+  acceptedSyncing,
 }: {
   stage: TransactionStage;
   busy: boolean;
   hasHash: boolean;
   errorCode?: string;
+  failedStage?: TransactionStage;
+  acceptedSyncing?: boolean;
 }) {
-  const failureStage: TransactionStage =
-    stage === "cancelled" || errorCode === "USER_REJECTED"
+  const failureStage =
+    failedStage ??
+    (stage === "cancelled" || errorCode === "USER_REJECTED"
       ? "awaiting_signature"
       : hasHash || stage === "timeout" || stage === "undetermined"
         ? "consensus"
-        : "preparing";
-  const displayStage = ["failed", "timeout", "undetermined", "cancelled"].includes(stage)
-    ? failureStage
-    : stage;
+        : "preparing");
+  const displayStage = normalizeVisibleStage(
+    ["failed", "timeout", "undetermined", "cancelled"].includes(stage) ? failureStage : stage,
+  );
   const activeIndex = Math.max(0, flowStages.indexOf(displayStage));
-  const failed = ["failed", "timeout", "undetermined", "cancelled"].includes(stage);
+  const failed =
+    !acceptedSyncing && ["failed", "timeout", "undetermined", "cancelled"].includes(stage);
 
   return (
-    <ol className="space-y-2 text-xs sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0 lg:grid-cols-5">
+    <ol className="space-y-2 text-xs sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0 lg:grid-cols-4">
       {flowStages.map((item, index) => {
         const complete = index < activeIndex || stage === "completed" || stage === "finalized";
         const active = item === displayStage || (busy && index === Math.max(activeIndex, 0));
@@ -322,10 +383,16 @@ function TransactionProgressLine({
         } else if (complete) {
           itemClassName = "border-success/40 bg-success/10 text-success";
         } else if (active) {
-          itemClassName = "border-ink bg-ink text-paper";
+          itemClassName =
+            item === "confirming"
+              ? "border-amber-deep/50 bg-amber/25 text-ink"
+              : "border-ink bg-ink text-paper";
         }
         return (
-          <li key={item} className={`flex items-center gap-3 border px-3 py-2 ${itemClassName}`}>
+          <li
+            key={item}
+            className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-2 border px-3 py-3 text-center ${itemClassName}`}
+          >
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
                 failed && active
@@ -334,16 +401,28 @@ function TransactionProgressLine({
                     ? "bg-success"
                     : active
                       ? busy
-                        ? "animate-pulse bg-paper"
-                        : "bg-paper"
+                        ? item === "confirming"
+                          ? "animate-pulse bg-amber-deep"
+                          : "animate-pulse bg-paper"
+                        : item === "confirming"
+                          ? "bg-amber-deep"
+                          : "bg-paper"
                       : "bg-muted-ink/40"
               }`}
               aria-hidden="true"
             />
-            <span className="uppercase tracking-[0.14em]">{item.replace("_", " ")}</span>
+            <span className="min-w-0 whitespace-normal break-words uppercase tracking-[0.14em]">
+              {stageLabels[item]}
+            </span>
           </li>
         );
       })}
     </ol>
   );
+}
+
+function normalizeVisibleStage(stage: TransactionStage): TransactionStage {
+  if (stage === "proposing" || stage === "committing" || stage === "revealing") return "consensus";
+  if (stage === "finalized") return "completed";
+  return stage;
 }

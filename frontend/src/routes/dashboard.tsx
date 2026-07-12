@@ -167,10 +167,13 @@ function PolicyCard({
   const mappedCancel = writer.cancel.error ? mapHedgixError(writer.cancel.error) : null;
   const mappedClaim = writer.claim.error ? mapHedgixError(writer.claim.error) : null;
   const activity = protectionActivityLabel(policy);
+  const writeBlocked = writer.transaction.blocksResubmission;
   const cancellationPending =
-    writer.cancel.isPending && String(writer.cancel.variables ?? "") === policy.protection_id;
+    writeBlocked ||
+    (writer.cancel.isPending && String(writer.cancel.variables ?? "") === policy.protection_id);
   const claimPending =
-    writer.claim.isPending && String(writer.claim.variables ?? "") === policy.protection_id;
+    writeBlocked ||
+    (writer.claim.isPending && String(writer.claim.variables ?? "") === policy.protection_id);
 
   return (
     <article className="border border-hairline bg-paper transition-colors hover:border-ink/30">

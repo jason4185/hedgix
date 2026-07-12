@@ -9,20 +9,24 @@ import { explorerTransactionUrl } from "@/config/chains";
 import type { GenLayerReceiptResult, TransactionProgress, TransactionStage } from "./types";
 
 const statusToStage: Record<string, TransactionStage> = {
+  UNINITIALIZED: "preparing",
+  SUBMITTED: "submitted",
   PENDING: "submitted",
-  PROPOSING: "proposing",
-  COMMITTING: "committing",
-  REVEALING: "revealing",
+  PROPOSING: "consensus",
+  COMMITTING: "consensus",
+  REVEALING: "consensus",
   ACCEPTED: "accepted",
-  FINALIZED: "finalized",
+  FINALIZED: "accepted",
   CANCELED: "cancelled",
   UNDETERMINED: "undetermined",
   VALIDATORS_TIMEOUT: "timeout",
   LEADER_TIMEOUT: "timeout",
   READY_TO_FINALIZE: "accepted",
-  APPEAL_REVEALING: "revealing",
-  APPEAL_COMMITTING: "committing",
+  APPEAL_REVEALING: "consensus",
+  APPEAL_COMMITTING: "consensus",
 };
+
+export const STATE_CONFIRMATION_BACKOFF_MS = [2000, 3000, 5000, 8000, 10000] as const;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -62,6 +66,56 @@ export function progressFromStatus(hash: string, status?: string): TransactionPr
     status,
     explorerUrl: explorerTransactionUrl(hash),
     checkedAt: new Date().toISOString(),
+  };
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export type StateConfirmationResult<T> =
+  | { outcome: "confirmed"; value: T; attempts: number }
+  | { outcome: "pending"; attempts: number; error: unknown; technicalDetails: string };
+
+export async function retryStateConfirmation<T>({
+  read,
+  isConfirmed,
+  backoffMs = STATE_CONFIRMATION_BACKOFF_MS,
+  onAttempt,
+}: {
+  read: () => Promise<T>;
+  isConfirmed: (value: T) => boolean;
+  backoffMs?: readonly number[];
+  onAttempt?: (attempt: number) => void;
+}): Promise<StateConfirmationResult<T>> {
+  let lastError: unknown = new Error("STATE_CONFIRMATION_FAILED: expected state was not found");
+
+  for (let index = 0; index < backoffMs.length; index += 1) {
+    await sleep(backoffMs[index]);
+    const attempt = index + 1;
+    onAttempt?.(attempt);
+    try {
+      const value = await read();
+      if (isConfirmed(value)) {
+        return { outcome: "confirmed", value, attempts: attempt };
+      }
+      lastError = new Error(
+        `STATE_CONFIRMATION_PENDING: expected state was not found on attempt ${attempt}`,
+      );
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  return {
+    outcome: "pending",
+    attempts: backoffMs.length,
+    error: lastError,
+    technicalDetails: safeStringify({
+      code: "STATE_CONFIRMATION_FAILED",
+      attempts: backoffMs.length,
+      error: errorMessage(lastError),
+    }),
   };
 }
 

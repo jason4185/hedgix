@@ -241,7 +241,11 @@ function PolicySections({
                 {canSettle && (
                   <button
                     className="w-full bg-ink px-3 py-2 text-sm text-paper disabled:opacity-50"
-                    disabled={writer.settle.isPending || writer.wallet.isWrongNetwork}
+                    disabled={
+                      writer.settle.isPending ||
+                      writer.wallet.isWrongNetwork ||
+                      writer.transaction.blocksResubmission
+                    }
                     onClick={() => void settle()}
                   >
                     Settle next eligible day
@@ -254,7 +258,11 @@ function PolicySections({
                 )}
                 <button
                   className="w-full border border-hairline px-3 py-2 text-sm disabled:opacity-50"
-                  disabled={writer.cancel.isPending || writer.wallet.isWrongNetwork}
+                  disabled={
+                    writer.cancel.isPending ||
+                    writer.wallet.isWrongNetwork ||
+                    writer.transaction.blocksResubmission
+                  }
                   onClick={() => setCancelReviewOpen(true)}
                 >
                   Cancel protection
@@ -269,7 +277,11 @@ function PolicySections({
                 </p>
                 <button
                   className="w-full bg-ink px-3 py-2 text-sm text-paper disabled:opacity-50"
-                  disabled={writer.claim.isPending || writer.wallet.isWrongNetwork}
+                  disabled={
+                    writer.claim.isPending ||
+                    writer.wallet.isWrongNetwork ||
+                    writer.transaction.blocksResubmission
+                  }
                   onClick={() => void claim()}
                 >
                   Claim payout

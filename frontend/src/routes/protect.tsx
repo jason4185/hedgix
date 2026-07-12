@@ -96,7 +96,7 @@ function ProtectPage() {
     contractConfigured: runtimeEnv.contractConfigured,
     connected: writer.wallet.isConnected,
     wrongNetwork: writer.wallet.isWrongNetwork,
-    pending: writer.purchase.isPending,
+    pending: writer.purchase.isPending || writer.transaction.blocksResubmission,
     selectedAsset: Boolean(selectedAsset),
     selectedLevel: Boolean(selectedLevel),
     duration: Boolean(duration),
@@ -170,11 +170,13 @@ function ProtectPage() {
         durationDays: duration,
         premiumWei,
       });
-      setSuccess({
-        hash: result.hash,
-        protectionId: result.protectionId,
-        policy: result.policy,
-      });
+      if (result.stateConfirmed) {
+        setSuccess({
+          hash: result.hash,
+          protectionId: result.protectionId,
+          policy: result.policy,
+        });
+      }
     } catch {
       // The mutation state renders the mapped contract or wallet error.
     }
@@ -467,8 +469,9 @@ function getPurchaseAction({
   if (pending) {
     return {
       kind: "disabled",
-      label: "Waiting for GenLayer consensus...",
-      message: "The current transaction is still being evaluated by GenLayer validators.",
+      label: "Checking latest state...",
+      message:
+        "The current transaction is accepted or still being checked. Do not submit it again.",
       disabled: true,
     };
   }

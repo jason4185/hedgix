@@ -20,7 +20,6 @@ export function Hero() {
                 className="anim-fade-up inline-flex items-center"
                 style={{ animationDelay: "0.12s" }}
               >
-                <Sym.Triangle className="mx-2 hidden h-6 w-6 text-ink/70 md:inline-block" />
                 for
               </span>{" "}
               <span className="anim-fade-up inline-block italic" style={{ animationDelay: "0.2s" }}>
@@ -34,7 +33,6 @@ export function Hero() {
                 style={{ animationDelay: "0.36s" }}
               >
                 never
-                <Sym.Cross className="mx-2 hidden h-5 w-5 text-ink/70 md:inline-block" />
               </span>{" "}
               <span className="anim-fade-up inline-block" style={{ animationDelay: "0.44s" }}>
                 stand still.

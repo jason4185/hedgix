@@ -111,16 +111,22 @@ export type TransactionStage =
   | "failed"
   | "timeout";
 
+export type TransactionOutcome = "true_failure" | "accepted_syncing" | "completed";
+
 export type TransactionProgress = {
   stage: TransactionStage;
+  outcome?: TransactionOutcome;
   hash?: Hash;
   status?: TransactionStatus | string;
   receipt?: GenLayerReceiptResult;
   explorerUrl?: string;
   error?: string;
+  failedStage?: TransactionStage;
   detail?: string;
+  warning?: string;
   checkedAt?: string;
   technicalDetails?: string;
+  stateConfirmationDetails?: string;
 };
 
 export type GenLayerReceiptResult = {

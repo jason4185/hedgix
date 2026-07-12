@@ -5,7 +5,12 @@ import { runtimeEnv } from "../src/config/env";
 import { decimalGenToWei, weiToGenText } from "../src/lib/genlayer/formatters";
 import { mapHedgixError } from "../src/lib/genlayer/errors";
 import { parseContractJson, parsePolicy, validateRegistry } from "../src/lib/genlayer/parsing";
-import { assertAcceptedExecution, findNewProtectionId } from "../src/lib/genlayer/transactions";
+import {
+  assertAcceptedExecution,
+  findNewProtectionId,
+  progressFromStatus,
+  retryStateConfirmation,
+} from "../src/lib/genlayer/transactions";
 import { extractTransactionHash } from "../src/lib/genlayer/writes";
 import {
   exampleLegacyUsdcUsdtPolicy,
@@ -91,6 +96,43 @@ describe("Bradbury wallet and GenLayer integration", () => {
     expect(findNewProtectionId(["1", "2"], ["1", "2", "3"])).toBe("3");
     expect(findNewProtectionId(["1"], ["1"])).toBeNull();
     expect(findNewProtectionId(["1"], ["1", "2", "3"])).toBeNull();
+  });
+
+  it("maps accepted GenLayer statuses without marking consensus as failed", () => {
+    const hash = `0x${"b".repeat(64)}`;
+    expect(progressFromStatus(hash, "PROPOSING").stage).toBe("consensus");
+    expect(progressFromStatus(hash, "COMMITTING").stage).toBe("consensus");
+    expect(progressFromStatus(hash, "REVEALING").stage).toBe("consensus");
+    expect(progressFromStatus(hash, "ACCEPTED").stage).toBe("accepted");
+    expect(progressFromStatus(hash, "READY_TO_FINALIZE").stage).toBe("accepted");
+    expect(progressFromStatus(hash, "FINALIZED").stage).toBe("accepted");
+    expect(progressFromStatus(hash, "CANCELED").stage).toBe("cancelled");
+  });
+
+  it("keeps accepted transactions syncing until delayed state confirmation appears", async () => {
+    const reads = [{ status: "missing" }, { status: "ACTIVE", owner: "0xabc" }];
+    const result = await retryStateConfirmation({
+      backoffMs: [0, 0],
+      read: async () => reads.shift() ?? { status: "missing" },
+      isConfirmed: (value) => value.status === "ACTIVE" && value.owner === "0xabc",
+    });
+    expect(result.outcome).toBe("confirmed");
+    expect(result.attempts).toBe(2);
+  });
+
+  it("returns an accepted-syncing warning result when state confirmation retries exhaust", async () => {
+    const result = await retryStateConfirmation({
+      backoffMs: [0, 0],
+      read: async () => {
+        throw new Error("RPC temporarily stale");
+      },
+      isConfirmed: () => false,
+    });
+    expect(result.outcome).toBe("pending");
+    if (result.outcome === "pending") {
+      expect(result.technicalDetails).toContain("STATE_CONFIRMATION_FAILED");
+      expect(result.technicalDetails).toContain("RPC temporarily stale");
+    }
   });
 
   it("parses contract JSON strings and escaped JSON strings safely", () => {
@@ -209,22 +251,57 @@ describe("Bradbury wallet and GenLayer integration", () => {
     expect(dialogSource).toContain("Confirm in your wallet");
     expect(dialogSource).toContain("Transaction submitted");
     expect(dialogSource).toContain("Waiting for GenLayer consensus");
-    expect(dialogSource).toContain("Confirming on-chain state");
+    expect(dialogSource).toContain("Confirming state");
     expect(dialogSource).toContain("Contract state confirmed");
-    expect(dialogSource).toContain("Continue checking status");
-    expect(dialogSource).toContain("Current stage");
+    expect(dialogSource).toContain("Transaction accepted");
+    expect(dialogSource).toContain("Accepted on-chain");
+    expect(dialogSource).toContain("Latest state not available yet");
+    expect(dialogSource).toContain("Retry state check");
+    expect(dialogSource).toContain("Current status");
     expect(dialogSource).toContain("Last checked");
     expect(dialogSource).toContain("aria-live");
   });
 
   it("confirms expected on-chain state after accepted writes", async () => {
     const hookSource = await source("../src/hooks/useHedgixWrite.ts");
-    expect(hookSource).toContain("confirmState");
+    expect(hookSource).toContain("confirmAcceptedState");
+    expect(hookSource).toContain("retryStateConfirmation");
     expect(hookSource).toContain("completeState");
     expect(hookSource).toContain("continueCheckingStatus");
-    expect(hookSource).toContain('after.status !== "CANCELLED"');
-    expect(hookSource).toContain('after.status !== "PAID"');
-    expect(hookSource).toContain("after.last_settled_date !== settlementDate");
+    expect(hookSource).toContain('value.status === "CANCELLED"');
+    expect(hookSource).toContain('value.status === "PAID"');
+    expect(hookSource).toContain("value.last_settled_date === settlementDate");
+    expect(hookSource).toContain('outcome: "accepted_syncing"');
+    expect(hookSource).toContain("blocksResubmission");
+  });
+
+  it("keeps the transaction stepper readable and non-red after accepted syncing", async () => {
+    const dialogSource = await source("../src/components/hedgix/TransactionDialog.tsx");
+    expect(dialogSource).toContain('"preparing"');
+    expect(dialogSource).toContain('"awaiting_signature"');
+    expect(dialogSource).toContain('"submitted"');
+    expect(dialogSource).toContain('"consensus"');
+    expect(dialogSource).toContain('"accepted"');
+    expect(dialogSource).toContain('"confirming"');
+    expect(dialogSource).toContain('"completed"');
+    expect(dialogSource).toContain("lg:grid-cols-4");
+    expect(dialogSource).toContain("min-w-0");
+    expect(dialogSource).toContain("whitespace-normal");
+    expect(dialogSource).toContain("break-words");
+    expect(dialogSource).toContain("!acceptedSyncing");
+    expect(dialogSource).toContain('item === "confirming"');
+  });
+
+  it("removes decorative triangle and plus/cross symbols from the hero headline", async () => {
+    const heroSource = await source("../src/components/hedgix/Hero.tsx");
+    expect(heroSource).toContain("Protection");
+    expect(heroSource).toContain("for");
+    expect(heroSource).toContain("markets");
+    expect(heroSource).toContain("never");
+    expect(heroSource).toContain("stand still.");
+    expect(heroSource).toContain("Sym.Diamond");
+    expect(heroSource).not.toContain("Sym.Triangle");
+    expect(heroSource).not.toContain("Sym.Cross");
   });
 
   it("does not rely on browser confirm for policy cancellation", async () => {
