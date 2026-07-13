@@ -25,15 +25,12 @@ Ticker and historical-candle validators independently retrieve Binance data and 
 
 Hedgix is not an AI advice, recommendation, or summarization product. GenLayer consensus is required because verified external evidence controls on-chain financial state and payout rights.
 
-## Submission Links
+## Live Deployment
 
 - Live app: https://hedgix.xyz
-- Source code: https://github.com/jason4185/hedgix
-- Production contract: `0xFc7A79324f8624DeFb10e9771Af45A5444ea708D`
+- Production contract: [`0xFc7A79324f8624DeFb10e9771Af45A5444ea708D`](https://explorer-bradbury.genlayer.com/address/0xFc7A79324f8624DeFb10e9771Af45A5444ea708D)
 - Network: GenLayer Bradbury
-- Contract source: `contract/Hedgix.py`
-- Registry: `registry/hedgix-market-protection-registry.v1.json`
-- Settlement worker: `cron/`
+- Public registry: https://hedgix-market-registry.netlify.app/hedgix-market-protection-registry.v1.json
 
 Hedgix is a protection product, not licensed insurance. The repository does not claim regulatory insurance status.
 
@@ -254,6 +251,14 @@ Hedgix is not fully trustless. It depends on the registry host, Binance market d
 | Network | GenLayer Bradbury testnet, chain ID `4221` |
 | Settlement automation | Cloudflare Worker in `cron/`, scheduled at `30 1 * * *` |
 | Testing | Bun test, TypeScript, ESLint |
+
+## Repository Structure
+
+- Intelligent Contract: `contract/Hedgix.py`
+- Market registry: `registry/hedgix-market-protection-registry.v1.json`
+- Frontend: `frontend/`
+- Settlement worker: `cron/`
+- Contract and integration tests: `tests/`
 
 ## Evidence, Setup, and Project Status
 
