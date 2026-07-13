@@ -35,15 +35,6 @@ Hedgix is not an AI advice, recommendation, or summarization product. GenLayer c
 - Registry: `registry/hedgix-market-protection-registry.v1.json`
 - Settlement worker: `cron/`
 
-[Open the live app](https://hedgix.xyz)
-
-| Item | Current value |
-| --- | --- |
-| Live application | `https://hedgix.xyz` |
-| Deployed contract | `0xFc7A79324f8624DeFb10e9771Af45A5444ea708D` |
-| Network | GenLayer Bradbury testnet, chain ID `4221` |
-| Public registry | `https://hedgix-market-registry.netlify.app/hedgix-market-protection-registry.v1.json` |
-
 Hedgix is a protection product, not licensed insurance. The repository does not claim regulatory insurance status.
 
 ## What Hedgix Does
