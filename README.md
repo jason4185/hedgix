@@ -54,25 +54,25 @@ flowchart LR
 
 ## UI Tour
 
-### Screenshot 1
+### Landing Page
 
 ![Hedgix landing page](docs/images/01-landing-page.png)
 
 Explore Hedgix and understand the protection model.
 
-### Screenshot 2
+### Protection Purchase
 
 ![Hedgix protection purchase](docs/images/02-protection-purchase.png)
 
 Choose an asset, protection type, event level, duration, premium, and payout.
 
-### Screenshot 3
+### Protection Dashboard
 
 ![Hedgix protection dashboard](docs/images/03-protection-dashboard.png)
 
 Track wallet-scoped protection positions and their current status.
 
-### Screenshot 4
+### Protection Details
 
 ![Hedgix protection details](docs/images/04-protection-details.png)
 
@@ -175,8 +175,6 @@ ACTIVE -> CANCELLED
 | `get_my_dashboard_summary` | Load the connected wallet's protection positions |
 | `get_protection` | Load one stored protection record |
 | `get_settlement_readiness` | Check the next settlement date and readiness |
-
-Historical testing code exists only in the archived development contract and is not part of the current production contract flow.
 
 ## Trust Model and Verification
 
