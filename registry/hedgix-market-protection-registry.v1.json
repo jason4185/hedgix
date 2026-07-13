@@ -96,10 +96,26 @@
     {
       "protection_type": "depeg_protection",
       "display_name": "Depeg Protection",
+      "description": "Stablecoin depeg protection using the daily low of the configured direct USD market.",
+      "threshold_type": "absolute_usd_price",
       "supported_assets": [
         {
+          "asset": "USDT",
+          "protected_asset": "USDT",
+          "display_name": "Tether",
+          "binance_settlement_symbol": "USDTUSD",
+          "settlement_symbol": "USDTUSD",
+          "quote_currency": "USD",
+          "protection_type": "depeg_protection"
+        },
+        {
           "asset": "USDC",
-          "binance_settlement_symbol": "USDCUSDT"
+          "protected_asset": "USDC",
+          "display_name": "USD Coin",
+          "binance_settlement_symbol": "USDCUSD",
+          "settlement_symbol": "USDCUSD",
+          "quote_currency": "USD",
+          "protection_type": "depeg_protection"
         }
       ],
       "event_levels": [

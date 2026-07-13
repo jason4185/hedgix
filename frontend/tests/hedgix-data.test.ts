@@ -63,6 +63,7 @@ describe("Hedgix frontend contract data rules", () => {
   it("shows claim and cancel actions only for eligible statuses", () => {
     expect(canClaim({ status: "TRIGGERED" })).toBe(true);
     expect(canClaim({ status: "ACTIVE" })).toBe(false);
+    expect(canClaim({ status: "PAID" })).toBe(false);
     expect(canCancel({ status: "ACTIVE" })).toBe(true);
     expect(canCancel({ status: "TRIGGERED" })).toBe(false);
   });

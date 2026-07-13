@@ -223,17 +223,33 @@ export function parseStringList(value: unknown): ParseResult<string[]> {
 export function parsePaginatedIds(value: unknown): ParseResult<PaginatedIds> {
   const unwrapped = unwrapContractValue(value);
   if (Array.isArray(unwrapped)) return { ok: true, value: { ids: unwrapped.map(String) } };
-  return parseContractJson(
-    value,
-    z.object({
-      ids: z.array(z.string()),
+  const parsed = z
+    .object({
+      protection_ids: z.array(z.string()).optional(),
+      ids: z.array(z.string()).optional(),
       start: z.string().optional(),
       limit: z.string().optional(),
       returned_count: z.string().optional(),
       total_count: z.string().optional(),
       has_more: z.boolean().optional(),
-    }),
-  );
+    })
+    .safeParse(unwrapped);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      raw: typeof value === "string" ? value : JSON.stringify(value),
+      error: parsed.error.message,
+    };
+  }
+  const ids = parsed.data.protection_ids ?? parsed.data.ids ?? [];
+  return {
+    ok: true,
+    value: {
+      ...parsed.data,
+      ids,
+      protection_ids: parsed.data.protection_ids,
+    },
+  };
 }
 
 export function validateRegistry(value: unknown): ParseResult<Registry> {

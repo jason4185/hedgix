@@ -85,6 +85,7 @@ export type GlobalDashboardSummary = {
 
 export type PaginatedIds = {
   ids: string[];
+  protection_ids?: string[];
   start?: string;
   limit?: string;
   returned_count?: string;

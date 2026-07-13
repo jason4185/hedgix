@@ -9,7 +9,7 @@ Hedgix is a GenLayer-powered crypto protection application that lets users prote
 | Item | Current value |
 | --- | --- |
 | Live application | `https://hedgix.xyz` |
-| Deployed contract | `0x5cA80eB0744574aD2214291e89aA547168c28084` |
+| Deployed contract | `0xFc7A79324f8624DeFb10e9771Af45A5444ea708D` |
 | Network | GenLayer Bradbury testnet, chain ID `4221` |
 | Public registry | `https://hedgix-market-registry.netlify.app/hedgix-market-protection-registry.v1.json` |
 
@@ -206,7 +206,7 @@ Purchase uses `/api/v3/ticker/price?symbol={symbol}` and stores the returned `pr
 
 ### GenLayer Verification
 
-Registry terms use `strict_eq` because the registry should resolve to one canonical JSON result. Binance prices use `run_nondet_unsafe` with custom validator logic: live ticker validators allow a bounded `200` basis point difference, while settlement kline validators require matching symbol, interval, date window, price field, and a scaled price difference of at most `1`.
+Registry terms use `strict_eq` because the registry should resolve to one canonical JSON result. Binance prices use `run_nondet_unsafe` with custom validator logic: live ticker validators allow a bounded `50` basis point difference, while settlement kline validators require matching symbol, interval, date window, price field, a positive settlement price, and a scaled price difference of at most `1`.
 
 | Input | Source of truth | Contract action |
 | --- | --- | --- |

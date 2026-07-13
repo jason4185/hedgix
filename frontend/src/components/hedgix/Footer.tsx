@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { BRADBURY_EXPLORER_URL } from "@/config/chains";
 import { runtimeEnv } from "@/config/env";
 import { LogoMark, Wordmark } from "./Logo";
 
@@ -31,9 +30,7 @@ const cols: { h: string; links: Item[] }[] = [
       { label: "GitHub", href: "https://github.com/jason4185/hedgix" },
       {
         label: "Contract Explorer",
-        href: runtimeEnv.contractAddress
-          ? `${BRADBURY_EXPLORER_URL}/address/${runtimeEnv.contractAddress}`
-          : BRADBURY_EXPLORER_URL,
+        href: runtimeEnv.contractExplorerUrl ?? runtimeEnv.explorerUrl,
       },
     ],
   },

@@ -66,9 +66,7 @@ const verifiedResources = [
   {
     k: "Deployed Hedgix contract",
     v: runtimeEnv.contractAddress ?? "Contract address unavailable",
-    href: runtimeEnv.contractAddress
-      ? `${BRADBURY_EXPLORER_URL}/address/${runtimeEnv.contractAddress}`
-      : BRADBURY_EXPLORER_URL,
+    href: runtimeEnv.contractExplorerUrl ?? BRADBURY_EXPLORER_URL,
   },
   {
     k: "Official product registry",

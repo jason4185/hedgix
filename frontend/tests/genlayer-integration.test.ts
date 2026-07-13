@@ -1,10 +1,19 @@
 import { describe, expect, it } from "bun:test";
 import { BRADBURY_CHAIN_ID, BRADBURY_RPC_URL } from "../src/config/chains";
 import { WALLETCONNECT_PROJECT_ID, walletConnectorPolicy } from "../src/config/wagmi";
-import { runtimeEnv } from "../src/config/env";
+import {
+  contractExplorerUrlForAddress,
+  parseContractAddressConfig,
+  runtimeEnv,
+} from "../src/config/env";
 import { decimalGenToWei, weiToGenText } from "../src/lib/genlayer/formatters";
 import { mapHedgixError } from "../src/lib/genlayer/errors";
-import { parseContractJson, parsePolicy, validateRegistry } from "../src/lib/genlayer/parsing";
+import {
+  parseContractJson,
+  parsePaginatedIds,
+  parsePolicy,
+  validateRegistry,
+} from "../src/lib/genlayer/parsing";
 import {
   assertAcceptedExecution,
   findNewProtectionId,
@@ -17,6 +26,9 @@ import {
   exampleUsdtUsdPolicy,
   registry,
 } from "../src/lib/hedgix-data";
+
+const NEW_HEDGIX_CONTRACT_ADDRESS = "0xFc7A79324f8624DeFb10e9771Af45A5444ea708D";
+const OLD_HEDGIX_CONTRACT_ADDRESS = ["0x5cA80eB0744574aD221", "4291e89aA547168c28084"].join("");
 
 async function source(path: string) {
   return Bun.file(new URL(path, import.meta.url)).text();
@@ -31,9 +43,27 @@ describe("Bradbury wallet and GenLayer integration", () => {
 
   it("documents the deployed Hedgix Bradbury contract address", async () => {
     const envExample = await source("../.env.example");
-    expect(envExample).toContain(
-      "VITE_HEDGIX_CONTRACT_ADDRESS=0x5cA80eB0744574aD2214291e89aA547168c28084",
+    expect(envExample).toContain(`VITE_HEDGIX_CONTRACT_ADDRESS=${NEW_HEDGIX_CONTRACT_ADDRESS}`);
+    expect(envExample).not.toContain(OLD_HEDGIX_CONTRACT_ADDRESS);
+  });
+
+  it("validates configured contract addresses without falling back to an old deployment", () => {
+    const valid = parseContractAddressConfig(`  ${NEW_HEDGIX_CONTRACT_ADDRESS}  `);
+    expect(valid.configured).toBe(true);
+    expect(valid.address).toBe(NEW_HEDGIX_CONTRACT_ADDRESS);
+    expect(contractExplorerUrlForAddress(valid.address)).toBe(
+      `https://explorer-bradbury.genlayer.com/address/${NEW_HEDGIX_CONTRACT_ADDRESS}`,
     );
+
+    const missing = parseContractAddressConfig("");
+    expect(missing.configured).toBe(false);
+    expect(missing.address).toBeNull();
+    expect(missing.error).toBe("VITE_HEDGIX_CONTRACT_ADDRESS is not configured.");
+
+    const invalid = parseContractAddressConfig("0xnot-a-valid-address");
+    expect(invalid.configured).toBe(false);
+    expect(invalid.address).toBeNull();
+    expect(invalid.error).toBe("VITE_HEDGIX_CONTRACT_ADDRESS is not a valid 0x address.");
   });
 
   it("uses injected wallets only and does not configure WalletConnect", async () => {
@@ -65,6 +95,8 @@ describe("Bradbury wallet and GenLayer integration", () => {
     expect(clientSource).toContain("createHedgixWriteClient");
     expect(writesSourceText).not.toContain("connectBradburyWallet");
     expect(writesSourceText).not.toContain('client.connect("testnetBradbury")');
+    expect(readsSource).toContain("address: requireContractAddress()");
+    expect(writesSource).toContain("const address = requireContractAddress()");
   });
 
   it("does not treat a transaction hash or accepted execution error as success", () => {
@@ -146,6 +178,30 @@ describe("Bradbury wallet and GenLayer integration", () => {
     ).toBe(false);
   });
 
+  it("parses paginated active IDs with protection_ids as the contract shape", () => {
+    const parsed = parsePaginatedIds(
+      JSON.stringify({
+        protection_ids: ["7", "8"],
+        start: "0",
+        limit: "25",
+        returned_count: "2",
+        total_count: "2",
+        has_more: false,
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.value.ids).toEqual(["7", "8"]);
+      expect(parsed.value.protection_ids).toEqual(["7", "8"]);
+    }
+  });
+
+  it("keeps ids as a fallback for older paginated active ID responses", () => {
+    const parsed = parsePaginatedIds(JSON.stringify({ ids: ["1"], has_more: false }));
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.value.ids).toEqual(["1"]);
+  });
+
   it("validates the registry and maps depeg products to direct USD symbols", () => {
     const parsed = validateRegistry(registry);
     expect(parsed.ok).toBe(true);
@@ -222,9 +278,14 @@ describe("Bradbury wallet and GenLayer integration", () => {
 
   it("removes transparency placeholders and shows verified resource links", async () => {
     const transparencySource = await source("../src/routes/transparency.tsx");
+    const footerSource = await source("../src/components/hedgix/Footer.tsx");
     expect(transparencySource).toContain("Verified resources");
     expect(transparencySource).toContain("Deployed Hedgix contract");
     expect(transparencySource).toContain("Official product registry");
+    expect(transparencySource).toContain("runtimeEnv.contractExplorerUrl");
+    expect(footerSource).toContain("runtimeEnv.contractExplorerUrl");
+    expect(transparencySource).not.toContain(`${OLD_HEDGIX_CONTRACT_ADDRESS}`);
+    expect(footerSource).not.toContain(`${OLD_HEDGIX_CONTRACT_ADDRESS}`);
     expect(transparencySource).not.toContain("To be documented");
     expect(transparencySource).not.toContain("Placeholders");
     expect(transparencySource).not.toContain("invented values");
@@ -273,6 +334,17 @@ describe("Bradbury wallet and GenLayer integration", () => {
     expect(hookSource).toContain("value.last_settled_date === settlementDate");
     expect(hookSource).toContain('outcome: "accepted_syncing"');
     expect(hookSource).toContain("blocksResubmission");
+  });
+
+  it("keeps dashboard claim actions tied to triggered on-chain status", async () => {
+    const dashboardSource = await source("../src/routes/dashboard.tsx");
+    const hookSource = await source("../src/hooks/useHedgixWrite.ts");
+    expect(dashboardSource).toContain("canClaim(statusPolicy)");
+    expect(dashboardSource).toContain("writer.claim.mutateAsync(policy.protection_id)");
+    expect(dashboardSource).toContain("Claim payout");
+    expect(dashboardSource).toContain("claimPending");
+    expect(hookSource).toContain('before.status !== "TRIGGERED"');
+    expect(hookSource).toContain('isConfirmed: (value) => value.status === "PAID"');
   });
 
   it("keeps the transaction stepper readable and non-red after accepted syncing", async () => {

@@ -16,7 +16,7 @@ PRICE_SCALE = 100000000
 BPS_DENOMINATOR = 10000
 DAY_MS = 24 * 60 * 60 * 1000
 PRICE_TOLERANCE_SCALED = 1
-LIVE_PRICE_TOLERANCE_BPS = 200
+LIVE_PRICE_TOLERANCE_BPS = 50
 GEN_WEI = 1000000000000000000
 
 PRICE_DROP_PROTECTION = "price_drop_protection"
@@ -287,7 +287,10 @@ class Hedgix(gl.Contract):
     @gl.public.write
     def set_settlement_operator(self, operator_address: str) -> None:
         self._require_owner()
-        self.settlement_operator = self._normalize_address(operator_address)
+        normalized_operator = self._normalize_address(operator_address)
+        if normalized_operator == "0x0000000000000000000000000000000000000000":
+            raise gl.vm.UserError("INVALID_SETTLEMENT_OPERATOR")
+        self.settlement_operator = normalized_operator
 
     @gl.public.write
     def pause_contract(self) -> None:
@@ -759,7 +762,10 @@ class Hedgix(gl.Contract):
         result = self._fetch_binance_kline_evidence(
             symbol, "1d", start_ms, end_ms, price_field
         )
-        return int(result["price_scaled"])
+        price_scaled = int(result["price_scaled"])
+        if price_scaled <= 0:
+            raise gl.vm.UserError("BINANCE_KLINE_PRICE_INVALID")
+        return price_scaled
 
     def _fetch_binance_kline_evidence(
         self,
@@ -807,6 +813,8 @@ class Hedgix(gl.Contract):
             if open_time != start_ms or close_time != end_ms:
                 raise gl.vm.UserError("INVALID_BINANCE_RESPONSE")
             price_scaled = self._parse_scaled_price(price_value)
+            if price_scaled <= 0:
+                raise gl.vm.UserError("BINANCE_KLINE_PRICE_INVALID")
             return {
                 "symbol": normalized_symbol,
                 "interval": interval,
@@ -837,6 +845,8 @@ class Hedgix(gl.Contract):
                         return False
                 leader_price = int(leader_data["price_scaled"])
                 validator_price = int(validator_result["price_scaled"])
+                if leader_price <= 0 or validator_price <= 0:
+                    return False
                 return abs(leader_price - validator_price) <= PRICE_TOLERANCE_SCALED
             except Exception:
                 return False
