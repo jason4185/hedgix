@@ -4,6 +4,37 @@
 
 Hedgix is a GenLayer-powered crypto protection application that lets users protect eligible assets against predefined market events. Product terms are verified by the Intelligent Contract, settlement uses public Binance market data, and eligible payouts are handled on-chain.
 
+## Why Hedgix Uses GenLayer
+
+Hedgix is a validator-backed parametric crypto market protection protocol.
+
+GenLayer consensus directly determines financially meaningful contract state. The contract independently fetches and verifies official protection terms from the Hedgix registry and retrieves Binance market evidence before creating protections or resolving daily settlement outcomes.
+
+The frontend is not trusted to supply authoritative premiums, payouts, symbols, trigger thresholds, reference prices, or settlement results.
+
+Validated evidence affects:
+
+- protection creation
+- reference price
+- trigger price
+- reserved liability
+- ACTIVE, TRIGGERED, and EXPIRED status
+- payout eligibility
+
+Ticker and historical-candle validators independently retrieve Binance data and compare decision-relevant evidence, including symbols, timestamps, price fields, positive prices, and leader-validator price equivalence.
+
+Hedgix is not an AI advice, recommendation, or summarization product. GenLayer consensus is required because verified external evidence controls on-chain financial state and payout rights.
+
+## Submission Links
+
+- Live app: https://hedgix.xyz
+- Source code: https://github.com/jason4185/hedgix
+- Production contract: `0xFc7A79324f8624DeFb10e9771Af45A5444ea708D`
+- Network: GenLayer Bradbury
+- Contract source: `contract/Hedgix.py`
+- Registry: `registry/hedgix-market-protection-registry.v1.json`
+- Settlement worker: `cron/`
+
 [Open the live app](https://hedgix.xyz)
 
 | Item | Current value |
