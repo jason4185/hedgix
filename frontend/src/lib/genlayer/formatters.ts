@@ -5,7 +5,7 @@ const GEN_WEI = 1_000_000_000_000_000_000n;
 
 export function decimalGenToWei(value: string): bigint {
   const trimmed = value.trim();
-  if (!/^\d+(\.\d+)?$/.test(trimmed)) {
+  if (!/^\d+(\.\d{1,18})?$/.test(trimmed)) {
     throw new Error("INVALID_AMOUNT");
   }
   const wei = parseEther(trimmed);
@@ -13,6 +13,22 @@ export function decimalGenToWei(value: string): bigint {
     throw new Error("INVALID_AMOUNT");
   }
   return wei;
+}
+
+export function genAmountToWei(value: string | number | bigint): bigint {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value) || value < 0) {
+      throw new Error("INVALID_AMOUNT");
+    }
+    return decimalGenToWei(String(value));
+  }
+  if (typeof value === "bigint") {
+    if (value < 0n) {
+      throw new Error("INVALID_AMOUNT");
+    }
+    return decimalGenToWei(value.toString());
+  }
+  return decimalGenToWei(value);
 }
 
 export function wholeGenToContractArg(value: string): bigint {

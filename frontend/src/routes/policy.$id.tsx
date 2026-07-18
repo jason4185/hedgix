@@ -73,7 +73,7 @@ function PolicyPage() {
           ) : !writer.wallet.isConnected ? (
             <Notice
               title="Connect your wallet"
-              body="Connect a compatible browser wallet to view this protection and submit available actions."
+              body="Connect a supported wallet to view this protection and submit available actions."
               action={<ConnectButton />}
             />
           ) : policy.isLoading ? (

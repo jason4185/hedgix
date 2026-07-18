@@ -32,6 +32,7 @@ import {
 import { useWalletState } from "./useWalletState";
 
 type MutationError = HedgixMappedError & { cause?: unknown };
+type ConnectedWriteContext = WriteContext & { address: NonNullable<WriteContext["address"]> };
 
 function toMutationError(error: unknown): MutationError {
   const mapped = mapHedgixError(error);
@@ -105,11 +106,13 @@ export function useHedgixWrite() {
     }));
   }
 
-  async function context(): Promise<WriteContext> {
+  async function context(): Promise<ConnectedWriteContext> {
     if (!runtimeEnv.contractConfigured) throw new Error("CONTRACT_ADDRESS_NOT_CONFIGURED");
     if (!wallet.isConnected) throw new Error("WALLET_NOT_CONNECTED");
     if (wallet.isWrongNetwork) throw new Error("WRONG_NETWORK");
-    return wallet.getWriteContext();
+    const writeContext = wallet.getWriteContext();
+    if (!writeContext.address) throw new Error("WALLET_NOT_CONNECTED");
+    return writeContext as ConnectedWriteContext;
   }
 
   function refresh() {
@@ -232,6 +235,7 @@ export function useHedgixWrite() {
       failTransaction(error);
       refresh();
     },
+    retry: false,
     throwOnError: false,
   });
 
@@ -266,6 +270,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -300,6 +305,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -342,6 +348,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -372,6 +379,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -402,6 +410,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -432,6 +441,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -462,6 +472,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 
@@ -492,6 +503,7 @@ export function useHedgixWrite() {
     },
     onSuccess: refresh,
     onError: failTransaction,
+    retry: false,
     throwOnError: false,
   });
 

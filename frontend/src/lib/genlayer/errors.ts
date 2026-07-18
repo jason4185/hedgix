@@ -11,6 +11,7 @@ export type HedgixMappedError = {
 
 export const CONTRACT_ERROR_CODES = [
   "INVALID_PREMIUM",
+  "INVALID_AMOUNT",
   "INSUFFICIENT_POOL_CAPACITY",
   "UNSUPPORTED_ASSET",
   "UNSUPPORTED_PROTECTION_TYPE",
@@ -46,6 +47,10 @@ export const CONTRACT_ERROR_CODES = [
   "PROTECTION_NOT_ACTIVE",
   "STATE_CONFIRMATION_FAILED",
   "WALLET_NOT_CONNECTED",
+  "ACTIVE_CONNECTOR_UNAVAILABLE",
+  "WALLET_PROVIDER_UNAVAILABLE",
+  "WALLET_PROVIDER_CHAIN_UNAVAILABLE",
+  "WALLET_ACCOUNT_MISMATCH",
   "NO_INJECTED_WALLET",
   "USER_REJECTED",
   "WRONG_NETWORK",
@@ -55,6 +60,8 @@ export const CONTRACT_ERROR_CODES = [
   "CONTRACT_ADDRESS_MISSING",
   "CONTRACT_RESPONSE_PARSE_FAILED",
   "TRANSACTION_CANCELLED",
+  "TRANSACTION_REJECTED",
+  "TRANSACTION_REVERTED",
   "TRANSACTION_TIMEOUT",
   "TRANSACTION_UNDETERMINED",
   "TRANSACTION_HASH_MISSING",
@@ -74,6 +81,13 @@ const copies: Record<string, ErrorCopy> = {
     action: "Refresh the product terms and review the purchase again.",
     severity: "error",
     retryable: true,
+  },
+  INVALID_AMOUNT: {
+    title: "Amount is invalid",
+    description: "Enter a positive GEN amount with no more than 18 decimal places.",
+    action: "Review the amount before submitting again.",
+    severity: "error",
+    retryable: false,
   },
   INSUFFICIENT_POOL_CAPACITY: {
     title: "Protection is temporarily unavailable",
@@ -327,15 +341,44 @@ const copies: Record<string, ErrorCopy> = {
   },
   WALLET_NOT_CONNECTED: {
     title: "Connect your wallet",
-    description: "Connect a compatible browser wallet to submit contract actions.",
-    action: "Connect a browser wallet and retry the action.",
+    description: "Connect a supported wallet to submit contract actions.",
+    action: "Connect a supported wallet and retry the action.",
     severity: "info",
     retryable: true,
   },
+  ACTIVE_CONNECTOR_UNAVAILABLE: {
+    title: "Wallet connector is unavailable",
+    description: "Hedgix could not access the currently connected wallet connector.",
+    action: "Reconnect your wallet, then submit the action again.",
+    severity: "warning",
+    retryable: true,
+  },
+  WALLET_PROVIDER_UNAVAILABLE: {
+    title: "Wallet provider is unavailable",
+    description: "The active wallet connector did not expose a usable signing provider.",
+    action: "Reconnect your supported wallet before submitting this contract action.",
+    severity: "warning",
+    retryable: true,
+  },
+  WALLET_PROVIDER_CHAIN_UNAVAILABLE: {
+    title: "Wallet network could not be verified",
+    description: "The active wallet provider did not return a usable chain identifier.",
+    action: "Check the wallet network and reconnect before submitting the action.",
+    severity: "warning",
+    retryable: true,
+  },
+  WALLET_ACCOUNT_MISMATCH: {
+    title: "Wallet account changed",
+    description:
+      "The account shown in Hedgix does not match the account currently selected by the active wallet provider.",
+    action: "Reconnect or switch back to the displayed account before submitting.",
+    severity: "error",
+    retryable: false,
+  },
   NO_INJECTED_WALLET: {
-    title: "No compatible browser wallet detected",
-    description: "Hedgix requires a browser wallet that supports custom EVM networks.",
-    action: "Install a compatible browser wallet, then reload the application.",
+    title: "No supported browser wallet detected",
+    description: "Hedgix requires a supported wallet that can use custom EVM networks.",
+    action: "Install a supported wallet, then reload the application.",
     severity: "warning",
     retryable: false,
   },
@@ -395,6 +438,20 @@ const copies: Record<string, ErrorCopy> = {
     severity: "info",
     retryable: true,
   },
+  TRANSACTION_REJECTED: {
+    title: "Transaction was rejected",
+    description: "The wallet or RPC rejected the transaction before Hedgix could track it.",
+    action: "Review the wallet message before submitting again.",
+    severity: "error",
+    retryable: true,
+  },
+  TRANSACTION_REVERTED: {
+    title: "Transaction reverted",
+    description: "The contract rejected the submitted transaction.",
+    action: "Review the contract error details before trying again.",
+    severity: "error",
+    retryable: true,
+  },
   TRANSACTION_TIMEOUT: {
     title: "Transaction still being resolved",
     description: "GenLayer has not reached a final result yet.",
@@ -443,7 +500,7 @@ const copies: Record<string, ErrorCopy> = {
     title: "Wallet method is not supported",
     description:
       "The connected wallet does not support one of the requested browser-wallet methods.",
-    action: "Use a compatible injected wallet on GenLayer Bradbury.",
+    action: "Use a supported injected wallet on GenLayer Bradbury.",
     severity: "warning",
     retryable: true,
   },
@@ -494,9 +551,13 @@ function errorText(raw: unknown): string {
 
 export function extractErrorCode(raw: unknown): string {
   const text = errorText(raw);
-  const userRejected = /user rejected|rejected request|denied transaction/i.test(text);
+  const userRejected = /user rejected|rejected request|denied transaction|\b4001\b/i.test(text);
   if (userRejected) return "USER_REJECTED";
-  if (/insufficient funds|exceeds the balance|not enough funds|not enough gen/i.test(text)) {
+  if (
+    /insufficient funds|insufficient balance|exceeds the balance|not enough funds|not enough gen|insufficient gas|intrinsic gas/i.test(
+      text,
+    )
+  ) {
     return "INSUFFICIENT_GEN";
   }
   if (/wallet_getSnaps|wallet_requestSnaps|method not supported|unsupported method/i.test(text)) {
@@ -506,7 +567,13 @@ export function extractErrorCode(raw: unknown): string {
   if (/switch chain|wallet_addEthereumChain|wallet_switchEthereumChain/i.test(text)) {
     return "CHAIN_SWITCH_REJECTED";
   }
-  if (/fetch failed|network error|failed to fetch/i.test(text)) return "RPC_UNAVAILABLE";
+  if (/transaction reverted|execution reverted|revert/i.test(text)) return "TRANSACTION_REVERTED";
+  if (/transaction rejected|nonce too low|replacement transaction underpriced/i.test(text)) {
+    return "TRANSACTION_REJECTED";
+  }
+  if (/fetch failed|network error|failed to fetch|ECONNREFUSED|timeout|502|503|504/i.test(text)) {
+    return "RPC_UNAVAILABLE";
+  }
   return CONTRACT_ERROR_CODES.find((code) => text.includes(code)) ?? text;
 }
 

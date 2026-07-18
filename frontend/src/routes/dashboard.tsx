@@ -76,7 +76,7 @@ function DashboardPage() {
           {!writer.wallet.isConnected && (
             <EmptyState
               title="Connect your wallet"
-              body="Connect a compatible browser wallet to view your protections and submit contract actions."
+              body="Connect a supported wallet to view your protections and submit contract actions."
               action={<ConnectButton />}
             />
           )}

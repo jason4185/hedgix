@@ -26,7 +26,3 @@ export function createHedgixWriteClient({
     provider,
   });
 }
-
-export async function connectBradburyWallet(client: ReturnType<typeof createHedgixWriteClient>) {
-  await client.connect("testnetBradbury");
-}

@@ -1,3 +1,5 @@
+import { genAmountToWei } from "./genlayer/formatters";
+
 export const REGISTRY_URL =
   "https://hedgix-market-registry.netlify.app/hedgix-market-protection-registry.v1.json";
 export const REGISTRY_NAME = "Hedgix Market Protection Registry";
@@ -336,7 +338,7 @@ export function getSelectedRegistryLevel(type: ProductType, levelName: string): 
 }
 
 export function premiumToWei(level: RegistryLevel): string {
-  return `${BigInt(level.premium.amount) * 1_000_000_000_000_000_000n}`;
+  return genAmountToWei(level.premium.amount).toString();
 }
 
 export function weiToGen(value: string | number | bigint | undefined): string {

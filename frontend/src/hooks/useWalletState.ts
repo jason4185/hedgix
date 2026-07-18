@@ -7,7 +7,7 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { BRADBURY_CHAIN_ID } from "@/config/chains";
-import type { Eip1193Provider, WriteContext } from "@/lib/genlayer/types";
+import type { WriteContext } from "@/lib/genlayer/types";
 
 export function useWalletState() {
   const account = useAccount();
@@ -27,15 +27,11 @@ export function useWalletState() {
     await switchChainAsync({ chainId: BRADBURY_CHAIN_ID });
   }
 
-  async function getWriteContext(): Promise<WriteContext> {
-    if (!account.address || !account.connector) throw new Error("USER_REJECTED");
-    const provider = (await account.connector.getProvider({
-      chainId: BRADBURY_CHAIN_ID,
-    })) as Eip1193Provider;
+  function getWriteContext(): WriteContext {
     return {
       address: account.address,
       chainId,
-      provider,
+      activeConnector: account.connector,
     };
   }
 

@@ -8,6 +8,7 @@ import { explorerTransactionUrl } from "@/config/chains";
 import { runtimeEnv } from "@/config/env";
 import { useHedgixWrite } from "@/hooks/useHedgixWrite";
 import { useRegistry } from "@/hooks/useRegistry";
+import { genAmountToWei } from "@/lib/genlayer/formatters";
 import {
   expectedCoverageDates,
   formatUsdPrice,
@@ -73,7 +74,7 @@ function ProtectPage() {
     selectedAsset?.binance_settlement_symbol ?? selectedAsset?.settlement_symbol ?? "";
   const coverage = useMemo(() => expectedCoverageDates(duration), [duration]);
   const premiumWei = useMemo(
-    () => BigInt(selectedLevel?.premium.amount ?? 0) * 1_000_000_000_000_000_000n,
+    () => (selectedLevel ? genAmountToWei(selectedLevel.premium.amount) : 0n),
     [selectedLevel],
   );
   const reviewItems = [
@@ -415,7 +416,7 @@ function getPurchaseAction({
     return {
       kind: "connect",
       label: "Connect wallet to continue",
-      message: "Connect a compatible browser wallet to review and purchase this protection.",
+      message: "Connect a supported wallet to review and purchase this protection.",
       disabled: false,
     };
   }

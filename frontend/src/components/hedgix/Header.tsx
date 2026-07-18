@@ -116,8 +116,8 @@ export function Header() {
       )}
       {!hasInjectedWallet && (
         <div className="border-t border-ink/10 bg-stone px-6 py-2 text-center text-xs text-muted-ink">
-          No compatible browser wallet was detected. Install a browser wallet that supports custom
-          EVM networks, then reload Hedgix.
+          No supported browser wallet was detected. Install a wallet that supports custom EVM
+          networks, then reload Hedgix.
         </div>
       )}
     </header>

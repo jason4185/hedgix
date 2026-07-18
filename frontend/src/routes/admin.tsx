@@ -30,12 +30,14 @@ function AdminPage() {
   const [poolAmount, setPoolAmount] = useState("1");
   const [withdrawAmount, setWithdrawAmount] = useState("1");
   const [operator, setOperator] = useState("");
+  const [inputError, setInputError] = useState<Error | null>(null);
   const owner = admin.owner.data;
   const settlementOperator = admin.operator.data;
   const canUseOwnerControls = isOwner(writer.wallet.address, owner);
   const canUseSettlementControls =
     canUseOwnerControls || isSettlementOperator(writer.wallet.address, settlementOperator);
   const error =
+    inputError ||
     writer.addFunds.error ||
     writer.withdraw.error ||
     writer.setOperator.error ||
@@ -44,15 +46,28 @@ function AdminPage() {
     writer.settle.error;
 
   async function addFunds() {
-    await writer.addFunds.mutateAsync(decimalGenToWei(poolAmount)).catch(() => undefined);
+    setInputError(null);
+    try {
+      await writer.addFunds.mutateAsync(decimalGenToWei(poolAmount)).catch(() => undefined);
+    } catch (error) {
+      setInputError(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   async function withdrawFunds() {
-    await writer.withdraw.mutateAsync(wholeGenToContractArg(withdrawAmount)).catch(() => undefined);
+    setInputError(null);
+    try {
+      await writer.withdraw
+        .mutateAsync(wholeGenToContractArg(withdrawAmount))
+        .catch(() => undefined);
+    } catch (error) {
+      setInputError(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   async function changeOperator() {
     if (!isAddress(operator)) return;
+    setInputError(null);
     await writer.setOperator.mutateAsync(operator).catch(() => undefined);
   }
 
@@ -159,6 +174,7 @@ function AdminPage() {
                 disabled={
                   !canUseOwnerControls ||
                   !isAddress(operator) ||
+                  writer.wallet.isWrongNetwork ||
                   writer.setOperator.isPending ||
                   writer.transaction.blocksResubmission
                 }
@@ -172,6 +188,7 @@ function AdminPage() {
                   type="button"
                   disabled={
                     !canUseOwnerControls ||
+                    writer.wallet.isWrongNetwork ||
                     writer.pause.isPending ||
                     writer.transaction.blocksResubmission
                   }
@@ -184,6 +201,7 @@ function AdminPage() {
                   type="button"
                   disabled={
                     !canUseOwnerControls ||
+                    writer.wallet.isWrongNetwork ||
                     writer.unpause.isPending ||
                     writer.transaction.blocksResubmission
                   }
@@ -204,9 +222,15 @@ function AdminPage() {
                   <ActivePolicyRow
                     key={id}
                     id={id}
-                    allowed={canUseSettlementControls && !writer.transaction.blocksResubmission}
+                    allowed={
+                      canUseSettlementControls &&
+                      !writer.wallet.isWrongNetwork &&
+                      !writer.transaction.blocksResubmission
+                    }
                     account={writer.wallet.address}
-                    settling={writer.settle.isPending}
+                    settling={
+                      writer.settle.isPending && writer.settle.variables?.protectionId === id
+                    }
                     onSettle={(protectionId, settlementDate) =>
                       writer.settle
                         .mutateAsync({ protectionId, settlementDate })

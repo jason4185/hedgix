@@ -68,11 +68,13 @@ export function ContractErrorMessage({
       <div className="font-medium text-ink">{resolved.title}</div>
       <p className="mt-2 leading-relaxed text-muted-ink">{resolved.description}</p>
       {resolved.action ? <p className="mt-2 text-ink">{resolved.action}</p> : null}
-      <TechnicalDetails>
-        {resolved.code}
-        {"\n"}
-        {resolved.raw}
-      </TechnicalDetails>
+      {import.meta.env.DEV ? (
+        <TechnicalDetails>
+          {resolved.code}
+          {"\n"}
+          {resolved.raw}
+        </TechnicalDetails>
+      ) : null}
     </div>
   );
 }

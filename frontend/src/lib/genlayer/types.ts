@@ -139,9 +139,15 @@ export type GenLayerReceiptResult = {
 };
 
 export type WriteContext = {
-  address: Address;
-  provider: Eip1193Provider;
+  address?: Address;
   chainId: number | undefined;
+  activeConnector?: ActiveWalletConnector | null;
+};
+
+export type ActiveWalletConnector = {
+  id?: string;
+  name?: string;
+  getProvider?: () => Promise<unknown> | unknown;
 };
 
 export type Eip1193Provider = {
